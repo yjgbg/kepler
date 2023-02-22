@@ -35,11 +35,7 @@ object DnfDsl:
   }
   object Evaludator:
     def apply[A](func:A =>Boolean):Evaluator[A] = func
-
-  extension [A](self:Conjunction[A]) def eval(evaluator:Evaluator[A]):Boolean = self.forall{ case Assignment(flag,it) => !flag ^ evaluator(it) }
   extension [A](self:DNF[A])
-    @scala.annotation.targetName("evalDnf")
-    def eval(evaluator:Evaluator[A]):Boolean = self.exists{_.eval(evaluator)}
     inline def conj:Seq[Conjunction[A]] = self
   extension [A:Ordering](self:DNF[A]|A)
     @annotation.nowarn def unary_! : DNF[A] = self match
@@ -65,22 +61,23 @@ object DnfDsl:
   object Searchine:
     def apply[E,T:Ordering]:Searchine[E,T] = new Searchine:
       private val content = mutable.HashMap[Conjunction[T],mutable.SortedSet[(Long,E)]]()
-      private val indexes = mutable.Buffer[Conjunction[T]]()
+      lazy val conjunctionSet = content.keySet
+      lazy val tSet = conjunctionSet.flatMap(_.map(_.it))
       override def put(dnf: DNF[T], e: E, priority: Long): Unit = {
         dnf.foreach{conj => 
-          val sorted = conj.sorted
-          indexes += sorted
-          indexes.sorted
-          content.getOrElseUpdate(sorted,mutable.SortedSet()(using Ordering.by(_._1))) += priority -> e
+          content.getOrElseUpdate(conj.sorted,mutable.SortedSet()(using Ordering.by(_._1))) += priority -> e
         }
       }
-      override def search(limit: Int, evaluator: Evaluator[T]): Seq[(Long, E)] = indexes
-        .filter{_.eval(evaluator)}
+      override def search(limit: Int, evaluator: Evaluator[T]): Seq[(Long, E)] = {
+        val res = tSet.map(it => it -> evaluator(it)).toMap
+        conjunctionSet
+        .filter{conj => conj.forall{ass => !ass.flag ^ res(ass.it)}}
         .flatMap{content.getOrElse(_,mutable.SortedMap[Long,E]())}
+        .toSeq
         .sortBy((priority,e) => -priority)
         .take(limit)
-        .toSeq
-      override def toString(): String = s"Searchine(content=$content,indexes=$indexes)"
+      }
+      override def toString(): String = s"Searchine(\n\tcontent=$content\n\tconjunctionSet=$conjunctionSet,\n\ttSet=$tSet)"
 
 @main def run = {
   sealed trait Resource:
@@ -143,8 +140,9 @@ object DnfDsl:
   import Targeting.*
   given [A <: Targeting]:Ordering[A] = Ordering.by(_.toString())
   val searchine = Searchine[Creative,Targeting]
-  searchine.put(! Network._5G,Creative(10L,10L,20L),2L)
+  searchine.put(Network._5G || Network.WIFI,Creative(10L,10L,20L),2L)
   searchine.put(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30) ,Creative(20L,20L,20L),3L)
+  searchine.put(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30) ,Creative(20L,20L,30L),4L)
   println(searchine)
   val x = searchine.search(1,Evaludator {
     case network:Network => network.ordinal < Network._5G.ordinal
