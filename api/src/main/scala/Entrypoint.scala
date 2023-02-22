@@ -1,4 +1,5 @@
 import scala.collection.SortedSet
+import scala.collection.SortedMap
 // import zhttp.http._
 // import zhttp.service.Server
 // import zio._
@@ -18,56 +19,68 @@ import scala.collection.SortedSet
 // }
 
 object DnfDsl:
-  opaque type Negate = Boolean
-  opaque type Assignment[+A] = (Negate,A)
-  given [A](using orderA:Ordering[A]):Ordering[Assignment[A]] with {
-    override def compare(x: Assignment[A], y: Assignment[A]): Int =
-      val res0 = orderA.compare(x._2,y._2)
-      if (res0 != 0) res0 else Ordering.Boolean.compare(x._1,y._1)
-  }
-  given [A](using assignment:Ordering[Assignment[A]]):Ordering[Conjunction[A]] with {
-    override def compare(x: Conjunction[A], y: Conjunction[A]): Int = {
-      val res0 = x.size - y.size
-      if res0 != 0 then 0 else x.zip(y).toSeq
-        .map((x0,y0) => assignment.compare(x0,y0))
-        .filter(_ != 0).take(0)
-        .headOption
-        .getOrElse(0)
+  case class Assignment[A](flag:Boolean,it:A)
+  opaque type Conjunction[A] = Seq[Assignment[A]]
+  opaque type DNF[A] = Seq[Conjunction[A]]
+  opaque type Evaluator[A] = A => Boolean
+  given [A:Ordering]:Ordering[Assignment[A]] =  Ordering.by[Assignment[A],A](_.it).orElseBy(_.flag)
+  given [A:Ordering]:Ordering[Conjunction[A]] = Ordering[Conjunction[A]]{(a,b) =>
+    if(a==b) 0 else {
+      val res0 = Ordering[Int].compare(a.size,b.size)
+      if(res0!=0) res0 else {
+        val res1 = Ordering[Assignment[A]].compare(a.head,b.head)
+        if(res1!=0) res1 else Ordering[Conjunction[A]].compare(a.tail,b.tail)
+      }
     }
   }
-  opaque type Conjunction[+A] = SortedSet[Assignment[A]]
-  opaque type DNF[+A] = SortedSet[Conjunction[A]]
-  opaque type Evaludator[A] = A => Boolean
   object Evaludator:
-    def apply[A](func:A =>Boolean):Evaludator[A] = func
+    def apply[A](func:A =>Boolean):Evaluator[A] = func
+
+  extension [A](self:Conjunction[A]) def eval(evaluator:Evaluator[A]):Boolean = self.forall{ case Assignment(flag,it) => !flag ^ evaluator(it) }
   extension [A](self:DNF[A])
     @scala.annotation.targetName("evalDnf")
-    def eval(evaluator:Evaludator[A]):Boolean = self.exists{_.forall{(negate,a) => negate ^ evaluator(a)}}
-    @scala.annotation.targetName("evalDnfByGiven")
-    inline def eval(using Evaludator[A]):Boolean = eval(summon)
-    inline def conj:SortedSet[Conjunction[A]] = self
+    def eval(evaluator:Evaluator[A]):Boolean = self.exists{_.eval(evaluator)}
+    inline def conj:Seq[Conjunction[A]] = self
   extension [A:Ordering](self:DNF[A]|A)
     @annotation.nowarn def unary_! : DNF[A] = self match
-      case dnf:DNF[A] => dnf.map{conj => conj.map{(negate,a) => SortedSet(!negate -> a)}:DNF[A]}.redu
-      case a:A => SortedSet(SortedSet(false -> a))
+      case dnf:DNF[A] => dnf.map{conj => conj.toSeq.map{case Assignment(flag,it) => Seq(Assignment(!flag,it))}}.reduce(_ && _)
+      case a:A => Seq(Seq(Assignment(false,a)))
     @annotation.nowarn def ||(it:DNF[A]|A):DNF[A] = (self -> it) match
       case (dnf0:DNF[A],dnf1:DNF[A]) => dnf0 ++ dnf1
-      case (dnf0:DNF[A],a1:A) => dnf0 + SortedSet(false -> a1)
-      case (a0:A,dnf1:DNF[A]) => dnf1 + SortedSet(false -> a0)
-      case (a0:A,a1:A) => SortedSet(SortedSet(false -> a0),SortedSet(false -> a1))
+      case (dnf0:DNF[A],a1:A) => dnf0 :+ Seq(Assignment(true,a1))
+      case (a0:A,dnf1:DNF[A]) => Seq(Assignment(true,a0)) +: dnf1
+      case (a0:A,a1:A) => Seq(Assignment(true,a0)) +: Seq(Assignment(true,a1)) +: Nil
     @annotation.nowarn def &&(it:DNF[A]|A):DNF[A] = (self -> it) match
       case (dnf0:DNF[A],dnf1:DNF[A]) => (for {
         conj0 <- dnf0
         conj1 <- dnf1
       } yield (conj0 ++ conj1))
-      case (dnf0:DNF[A],a1:A) => dnf0.map{_  + (false -> a1)}
-      case (a0:A,dnf1:DNF[A]) =>  dnf1.map{_ + (false -> a0)}
-      case (a0:A,a1:A) => SortedSet(SortedSet(false -> a0,false -> a1))
-  import collection.mutable.{Seq as MutableSeq,HashMap as MutableHashMap,SortedSet as MutableSortedSet}
-  case class Searchine[Item,Targeting:Ordering](indexes:MutableSeq[Conjunction[Targeting]] = MutableSeq(),content:MutableHashMap[Conjunction[Targeting],MutableSortedSet[(Long,Item)]]):
-    def put(dnf:DNF[Targeting],item:Item,priority:Long):Unit = putAll(Seq((dnf,item,priority)))
-    def putAll(all:Seq[(DNF[Targeting],Item,Long)]):Unit = ???
-    def search(limit:Int,evaluator:Evaludator[Targeting]):Seq[Item] = ???
+      case (dnf0:DNF[A],a1:A) => dnf0.map{_  :+ (Assignment(true,a1))}
+      case (a0:A,dnf1:DNF[A]) =>  dnf1.map{(Assignment(true,a0)) +: _}
+      case (a0:A,a1:A) => Seq(Seq(Assignment(true,a0),Assignment(true,a1)))
+  import collection.mutable
+  trait Searchine[E,T:Ordering]:
+    def put(dnf:DNF[T],e:E,priority:Long):Unit
+    def search(limit:Int,evaluator:Evaluator[T]):Seq[(Long,E)]
+  object Searchine:
+    def apply[E,T:Ordering]:Searchine[E,T] = new Searchine:
+      private val content = mutable.HashMap[Conjunction[T],mutable.SortedSet[(Long,E)]]()
+      private val indexes = mutable.Buffer[Conjunction[T]]()
+      override def put(dnf: DNF[T], e: E, priority: Long): Unit = {
+        dnf.foreach{conj => 
+          val sorted = conj.sorted
+          indexes += sorted
+          indexes.sorted
+          content.getOrElseUpdate(sorted,mutable.SortedSet()(using Ordering.by(_._1))) += priority -> e
+        }
+      }
+      override def search(limit: Int, evaluator: Evaluator[T]): Seq[(Long, E)] = indexes
+        .filter{_.eval(evaluator)}
+        .flatMap{content.getOrElse(_,mutable.SortedMap[Long,E]())}
+        .sortBy((priority,e) => -priority)
+        .take(limit)
+        .toSeq
+      override def toString(): String = s"Searchine(content=$content,indexes=$indexes)"
 
 @main def run = {
   sealed trait Resource:
@@ -93,14 +106,14 @@ object DnfDsl:
       case _4G extends Network
       case _5G extends Network
     case class Geo(province:String,city:String) extends Targeting // 地域定向
-    case class AgeRange(min:Int,max:Int) extends Targeting // 年龄范围定向
+    case class AgeBetween(min:Int,max:Int) extends Targeting // 年龄范围定向
     enum IdType extends Targeting: // ID类型定向
       case IMEI extends IdType
       case OAID extends IdType
       case IDFA extends IdType
       case Cookie extends IdType
     case class MD5[A <: IdType](idType:A) extends Targeting
-    case class Pkg[A<:IdType](a:A,id:Long) extends Targeting // 人群包定向
+    case class Pkg[A<:IdType](idType:A,pkgId:Long) extends Targeting // 人群包定向
     sealed trait OS extends Targeting
     object OS:
       enum Android extends OS:
@@ -129,23 +142,14 @@ object DnfDsl:
   import DnfDsl.*
   import Targeting.*
   given [A <: Targeting]:Ordering[A] = Ordering.by(_.toString())
-
-  val searchine = Searchine[Creative,Targeting](null,null)
-  searchine.put(! Network._5G && AgeRange(18,23),Creative(10L,10L,20L),1L)
-  val x = searchine.search(10,Evaludator {
-    case Network._5G => true
-    case AgeRange(min, max) => min < 23 && max > 23
+  val searchine = Searchine[Creative,Targeting]
+  searchine.put(! Network._5G,Creative(10L,10L,20L),2L)
+  searchine.put(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30) ,Creative(20L,20L,20L),3L)
+  println(searchine)
+  val x = searchine.search(1,Evaludator {
+    case network:Network => network.ordinal < Network._5G.ordinal
+    case AgeBetween(min, max) => min < 22 && max > 22
+    case gender:Gender => gender == Gender.Male
   })
   println(x)
-  // val creative = Creative(10L,20L,20L, ! Network._5G && AgeRange(18,23) && Gender.Female && Geo("上海","上海") && (OS.IOS._6 || OS.IOS._7)) // 创意
-  // val x = creative.dnf
-  // println(x)
-  // println(x.eval(Evaludator{
-  //   case Nid(nid) => nid == "100L"
-  //   case idType : IdType => IdType.valueOf("")  == IdType.IDFA
-  //   case Pkg(IdType.IMEI, id) => Pkg.exists(IdType.IMEI,id,"qweqweqw") // 第二个括号里是
-  // }))
-  // extension [A](a:A)
-  //   def unary_! = s"!${a}"
-  // val qwewqe = ! "QWE"
 }
