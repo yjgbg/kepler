@@ -1,5 +1,6 @@
 import scala.collection.SortedSet
 import scala.collection.SortedMap
+import scala.collection.mutable.Buffer
 // import zhttp.http._
 // import zhttp.service.Server
 // import zio._
@@ -22,21 +23,9 @@ object DnfDsl:
   case class Assignment[A](flag:Boolean,it:A)
   opaque type Conjunction[A] = Seq[Assignment[A]]
   opaque type DNF[A] = Seq[Conjunction[A]]
+  object DNF:
+    def apply[A](it:Seq[Seq[Assignment[A]]]):DNF[A] = it
   opaque type Evaluator[A] = A => Boolean
-  given [A:Ordering]:Ordering[Assignment[A]] =  Ordering.by[Assignment[A],A](_.it).orElseBy(_.flag)
-  given [A:Ordering]:Ordering[Conjunction[A]] = Ordering[Conjunction[A]]{(a,b) =>
-    if(a==b) 0 else {
-      val res0 = Ordering[Int].compare(a.size,b.size)
-      if(res0!=0) res0 else {
-        val res1 = Ordering[Assignment[A]].compare(a.head,b.head)
-        if(res1!=0) res1 else Ordering[Conjunction[A]].compare(a.tail,b.tail)
-      }
-    }
-  }
-  object Evaludator:
-    def apply[A](func:A =>Boolean):Evaluator[A] = func
-  extension [A](self:DNF[A])
-    inline def conj:Seq[Conjunction[A]] = self
   extension [A:Ordering](self:DNF[A]|A)
     @annotation.nowarn def unary_! : DNF[A] = self match
       case dnf:DNF[A] => dnf.map{conj => conj.toSeq.map{case Assignment(flag,it) => Seq(Assignment(!flag,it))}}.reduce(_ && _)
@@ -54,31 +43,50 @@ object DnfDsl:
       case (dnf0:DNF[A],a1:A) => dnf0.map{_  :+ (Assignment(true,a1))}
       case (a0:A,dnf1:DNF[A]) =>  dnf1.map{(Assignment(true,a0)) +: _}
       case (a0:A,a1:A) => Seq(Seq(Assignment(true,a0),Assignment(true,a1)))
+  object Evaludator:
+    def apply[A](func:A =>Boolean):Evaluator[A] = func
   import collection.mutable
-  trait Searchine[E,T:Ordering]:
-    def put(dnf:DNF[T],e:E,priority:Long):Unit
-    def search(limit:Int,evaluator:Evaluator[T]):Seq[(Long,E)]
+  enum State:
+    case Preparing extends State
+    case Ready extends State
+  case class Item[A](data:A,priority:Long = 0)
+  given Ordering[Item[_]] = Ordering.by(- _.priority)
+  case class Searchine[E,T:Ordering,A <: State](val store:mutable.HashMap[Seq[Assignment[T]],Buffer[Item[E]]]):
+    private lazy val conjBuffer = store.keySet.to(Buffer)
+    private lazy val assignmentBuffer = conjBuffer.flatMap(_.map(_.it))
   object Searchine:
-    def apply[E,T:Ordering]:Searchine[E,T] = new Searchine:
-      private val content = mutable.HashMap[Conjunction[T],mutable.SortedSet[(Long,E)]]()
-      lazy val conjunctionSet = content.keySet
-      lazy val tSet = conjunctionSet.flatMap(_.map(_.it))
-      override def put(dnf: DNF[T], e: E, priority: Long): Unit = {
-        dnf.foreach{conj => 
-          content.getOrElseUpdate(conj.sorted,mutable.SortedSet()(using Ordering.by(_._1))) += priority -> e
-        }
+    def apply[E,T:Ordering]:Searchine[E,T,State.Preparing.type] = new Searchine(mutable.HashMap())
+    private given [T:Ordering]:Ordering[Assignment[T]] = 
+      Ordering.by[Assignment[T],T](_.it).orElseBy(_.flag)
+    extension [E,T:Ordering](that:Searchine[E,T,State.Preparing.type]) 
+      @scala.annotation.nowarn def load(cond: DNF[T]|T, e: E, priority: Long = 0): Searchine[E,T,State.Preparing.type] = {
+        cond match
+          case dnf:Seq[Seq[Assignment[T]]] => dnf.foreach{conj => 
+            that.store.getOrElseUpdate(conj.sorted,Buffer[Item[E]]()) += Item(e,priority)
+          }
+          case t:T => load(Seq(Seq(Assignment(true,t))),e,priority)
+        that
       }
-      override def search(limit: Int, evaluator: Evaluator[T]): Seq[(Long, E)] = {
-        val res = tSet.map(it => it -> evaluator(it)).toMap
-        conjunctionSet
-        .filter{conj => conj.forall{ass => !ass.flag ^ res(ass.it)}}
-        .flatMap{content.getOrElse(_,mutable.SortedMap[Long,E]())}
-        .toSeq
-        .sortBy((priority,e) => -priority)
-        .take(limit)
+      def ready:Searchine[E,T,State.Ready.type] = {
+        // 排序
+        that.store.mapValuesInPlace{(k,v) => v.sorted}
+        // 触发lazy的计算
+        that.conjBuffer
+        // 触发lazy的计算
+        that.assignmentBuffer
+        // 返回这个对象
+        that.asInstanceOf[Searchine[E,T,State.Ready.type]]
       }
-      override def toString(): String = s"Searchine(\n\tcontent=$content\n\tconjunctionSet=$conjunctionSet,\n\ttSet=$tSet)"
-
+    extension [E,T:Ordering](that:Searchine[E,T,State.Ready.type])
+      def search(limit: Int, evaluator: Evaluator[T]): Seq[Item[E]] = {
+        val res = that.assignmentBuffer.map(it => it -> evaluator(it)).toMap
+        that.conjBuffer
+          .filter{conj => conj.forall{ass => !ass.flag ^ res(ass.it)}}
+          .toSeq
+          .flatMap{that.store.getOrElse(_,Seq[Item[E]]()).take(limit)}
+          .sorted
+          .take(limit)
+      }
 @main def run = {
   sealed trait Resource:
     val id:Long
@@ -93,6 +101,7 @@ object DnfDsl:
   case class Adx(override val id:Long,name:String,code:String,eval:Targeting => Unit) extends Resource
   sealed trait Targeting
   object Targeting:
+    case class AdxCode(code:String) extends Targeting
     case class Nid(nid:String) extends Targeting
     enum Gender extends Targeting:
       case Male extends Gender
@@ -140,12 +149,12 @@ object DnfDsl:
   import Targeting.*
   given [A <: Targeting]:Ordering[A] = Ordering.by(_.toString())
   val searchine = Searchine[Creative,Targeting]
-  searchine.put(Network._5G || Network.WIFI,Creative(10L,10L,20L),2L)
-  searchine.put(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30) ,Creative(20L,20L,20L),3L)
-  searchine.put(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30) ,Creative(20L,20L,30L),4L)
-  println(searchine)
+    .load(Network._5G || Network.WIFI,Creative(10L,10L,20L),2L)
+    .load(Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30),Creative(20L,20L,20L),4L)
+    .load(Gender.Male && AgeBetween(18,23) ,Creative(20L,20L,30L),4L)
+    .ready
   val x = searchine.search(1,Evaludator {
-    case network:Network => network.ordinal < Network._5G.ordinal
+    case network:Network => network == Network._5G
     case AgeBetween(min, max) => min < 22 && max > 22
     case gender:Gender => gender == Gender.Male
   })
