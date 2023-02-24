@@ -28,7 +28,8 @@ object biz:
       case IMEI extends IdType
       case OAID extends IdType
       case IDFA extends IdType
-      case Cookie extends IdType
+      case COOKIE extends IdType
+      case UNKNOWN extends IdType
     case class MD5[A <: IdType](idType:A) extends Targeting
     case class Pkg[A<:IdType](idType:A,pkgId:Long) extends Targeting // 人群包定向
     sealed trait OS extends Targeting

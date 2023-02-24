@@ -17,8 +17,9 @@ object web extends ZIOAppDefault {
     }
     Http.collectZIO[Request] {
       case req @ Method.GET -> !! / "bid" / adxCode / nid => for {
-        _ <- Console.printLine(nid)
-        chunk <- req.body
+        _ <- Console.printLine(adxCode+"/"+nid)
+        // chunk <- req.body
+        chunk = null
         adxAdaptor = AdxAdaptor(adxCode)
         evaluator = adxAdaptor.evaluator(nid,chunk)
         searchResult <- biz.searchine.search(adxAdaptor.limit,evaluator)
