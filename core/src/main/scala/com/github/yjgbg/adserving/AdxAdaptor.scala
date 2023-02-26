@@ -2,23 +2,24 @@ package com.github.yjgbg.adserving
 
 import zhttp.http.Response
 
-
 trait AdxAdaptor(val adxCode:String):
-  def evaluator(nid:String,chunk:zio.Chunk[Byte]|Null):core.Evaluator[biz.Targeting,zio.Task]
-  def handler(seq:Seq[core.Item[biz.Creative]]):Response
-  def limit:Int
+  type Limit = Int
+  type ZoneKey = String
+  type State
+  def evaluator(nid:String,chunk:zio.Chunk[Byte]|Null)
+    :zio.UIO[(Limit,State,Seq[(ZoneKey,engine.Evaluator[biz.Targeting])])]
+  def handler(state:State,seq:Seq[Seq[engine.Item[biz.Creative]]]):zhttp.http.Response
 
 object AdxAdaptor:
-  private lazy val all:Seq[AdxAdaptor] = Seq(
+  private var all:Seq[AdxAdaptor] = Vector(
     adaptor.IQIYI
   )
   def apply(adxCode:String):AdxAdaptor = 
     all.find{_.adxCode == adxCode}.getOrElse(fallback)
   val fallback:AdxAdaptor = new AdxAdaptor("fallback"):
-    override def evaluator(nid: String, chunk: zio.Chunk[Byte]|Null): core.Evaluator[biz.Targeting, zio.Task] = 
-      chunk match
-        case ck:zio.Chunk[Byte] => core.Evaludator{_ => zio.ZIO.succeed(false)}
-        case null => core.Evaludator{ _ => zio.ZIO.succeed(false)}
-    override def handler(seq: Seq[core.Item[biz.Creative]]): Response = Response.ok
-    override def limit: Int = 0
+    override type State = Unit
+    override def evaluator(nid: String, chunk: zio.Chunk[Byte]|Null) = 
+      zio.ZIO.succeed((0,(), Seq("fallback" -> engine.Evaludator{ _ => false})))
+    override def handler(state:State,seq: Seq[Seq[engine.Item[biz.Creative]]]) = 
+      zhttp.http.Response(zhttp.http.Status.NoContent)
 

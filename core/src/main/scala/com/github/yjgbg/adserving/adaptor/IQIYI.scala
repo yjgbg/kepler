@@ -2,36 +2,48 @@ package com.github.yjgbg.adserving
 package adaptor
 
 import biz.Targeting.*
-import zio.ZIO
-import zhttp.http.Response
-import zio.Chunk
-import zhttp.http.Request
+import zio.{ZIO,Chunk}
+import zhttp.http.{Request,Response}
+import com.github.yjgbg.adserving.iqiyi.Response.Seatbid
 
 object IQIYI extends AdxAdaptor("IQIYI") with utils:
-  override def evaluator(nid:String,chunk:zio.Chunk[Byte]): core.Evaluator[biz.Targeting, zio.Task] = 
-    val request = iqiyi.Request.BidRequest.parseFrom(chunk.toArray)
-    val lens = scalapb.lenses.Lens.unit[iqiyi.Request.BidRequest]
-    val imei = lens.device.imei.get(request)
-    val oaid = lens.device.oaid.get(request)
-    val caid = lens.device.caidInfo.caid.get(request)
-      .max(using Ordering.by(_.version)).caid.orNull
-    val idType = this.idType(imei,oaid)
-    val osUpperCase = lens.device.os.get(request) ?? {_.toUpperCase}
-    val osv = lens.device.osVersion.get(request)
-    core.Evaludator {
-      case AdxCode(code) => ZIO.succeed(code == adxCode)
-      case network: Network => ZIO.succeed(network == Network._5G)
-      case os: OS => ZIO.succeed(os.toString() == osUpperCase)
-      case AgeBetween(min, max) => ZIO.succeed(min < 23 && max > 23)
-      case gender: Gender => ZIO.succeed(gender == Gender.Male)
-      case idType0:IdType => ZIO.succeed(idType == idType0)
-    }
-  override def limit:Int = 10
-  override def handler(seq: Seq[core.Item[biz.Creative]]): Response = 
-    val x = iqiyi.Response.BidResponse.defaultInstance
+  override type State = iqiyi.Request.BidRequest
+  override def evaluator(nid:String,chunk:zio.Chunk[Byte]) = for {
+      _ <- zio.ZIO.debug(s"nid=${nid}")
+      request = iqiyi.Request.BidRequest.parseFrom(chunk.toArray)
+      lens = scalapb.lenses.Lens.unit[iqiyi.Request.BidRequest]
+      imei = lens.device.imei.get(request)
+      oaid = lens.device.oaid.get(request)
+      caidInfo = lens.device.caidInfo.caid.get(request)
+      idType = utils.idType(imei,oaid,null,null)
+      osUpperCase = lens.device.os.get(request) |> {_.toUpperCase}
+      osv = lens.device.osVersion.get(request)
+    } yield (10,request,for (imp <- request.imp) yield adxCode+imp.campaignId.getOrElse("") -> engine.Evaludator {
+      case AdxCode(code) => code == adxCode
+      case network: Network => network == Network.Network5G
+      case os: OS => os.toString() == osUpperCase
+      case AgeBetween(min, max) => min < 23 && max > 23
+      case gender: Gender => gender == Gender.Male
+      case idType0:IdType => idType == idType0
+      case _ => null
+    })
+  override def handler(req:State,seq: Seq[Seq[engine.Item[biz.Creative]]]) = 
+    val lens = scalapb.lenses.Lens.unit[iqiyi.Response.BidResponse]
+    val bidResponse = iqiyi.Response.BidResponse(
+      id = req.id.orNull,
+      seatbid = for ((imp,sr) <- req.imp.zip(seq)) yield iqiyi.Response.Seatbid(
+        bid = sr.map{item => iqiyi.Response.Bid(
+          id = req.id.orNull,
+          impid =  imp.id.orNull,
+          price = item.data.price.toInt,
+          adm = "adm",
+          crid = item.data.id.toString
+        )}
+      )
+    )
     Response(
       headers = zhttp.http.Headers(
         "ContentType" -> "application/protobuf"
       ),
-      data = zhttp.http.HttpData.fromChunk(Chunk.fromArray(x.toByteArray))
+      data = zhttp.http.HttpData.fromChunk(Chunk.fromArray(bidResponse.toByteArray))
     )
