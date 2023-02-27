@@ -8,25 +8,25 @@ import com.github.yjgbg.adserving.iqiyi.Response.Seatbid
 
 object IQIYI extends AdxAdaptor("IQIYI") with utils:
   override type State = iqiyi.Request.BidRequest
-  override def evaluator(nid:String,chunk:zio.Chunk[Byte]) = for {
-      _ <- zio.ZIO.debug(s"nid=${nid}")
-      request = iqiyi.Request.BidRequest.parseFrom(chunk.toArray)
-      lens = scalapb.lenses.Lens.unit[iqiyi.Request.BidRequest]
-      imei = lens.device.imei.get(request)
-      oaid = lens.device.oaid.get(request)
-      caidInfo = lens.device.caidInfo.caid.get(request)
-      idType = utils.idType(imei,oaid,null,null)
-      osUpperCase = lens.device.os.get(request) |> {_.toUpperCase}
-      osv = lens.device.osVersion.get(request)
-    } yield (10,request,for (imp <- request.imp) yield adxCode+imp.campaignId.getOrElse("") -> engine.Evaludator {
-      case AdxCode(code) => code == adxCode
-      case network: Network => network == Network.Network5G
-      case os: OS => os.toString() == osUpperCase
-      case AgeBetween(min, max) => min < 23 && max > 23
-      case gender: Gender => gender == Gender.Male
-      case idType0:IdType => idType == idType0
-      case _ => null
-    })
+  override def evaluator(chunk:zio.Chunk[Byte]) = for {
+    _ <- ZIO.unit
+    request = iqiyi.Request.BidRequest.parseFrom(chunk.toArray)
+    lens = scalapb.lenses.Lens.unit[iqiyi.Request.BidRequest]
+    imei = lens.device.imei.get(request)
+    oaid = lens.device.oaid.get(request)
+    caidInfo = lens.device.caidInfo.caid.get(request)
+    idType = utils.idType(imei,oaid,null,null)
+    osUpperCase = lens.device.os.get(request) |> {_.toUpperCase}
+    osv = lens.device.osVersion.get(request)
+  } yield (10,request,request.id.orNull,for (imp <- request.imp) yield engine.Evaludator {
+    case AdxCode(code) => code == adxCode
+    case network: Network => network == Network.Network5G
+    case os: OS => os.toString() == osUpperCase
+    case AgeBetween(min, max) => min < 23 && max > 23
+    case gender: Gender => gender == Gender.Male
+    case idType0:IdType => idType == idType0
+    case _ => null
+  })
   override def handler(req:State,seq: Seq[Seq[engine.Item[biz.Creative]]]) = 
     val lens = scalapb.lenses.Lens.unit[iqiyi.Response.BidResponse]
     val bidResponse = iqiyi.Response.BidResponse(

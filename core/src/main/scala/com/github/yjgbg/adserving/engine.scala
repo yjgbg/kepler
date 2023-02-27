@@ -1,5 +1,8 @@
 package com.github.yjgbg.adserving
 
+import scala.reflect.ClassTag
+import scala.reflect.TypeTest
+
 object engine:
   case class Assignment[+A](flag:Boolean,it:A)
   opaque type Conjunction[+A] = Seq[Assignment[A]]
@@ -33,60 +36,46 @@ object engine:
   enum Ready:
     case Yes extends Ready
     case No extends Ready
-  case class Item[A](data:A,priority:Long = 0)
-  class Searchine[E,T:Ordering,A <: Ready]:
-    private val store:mutable.HashMap[Seq[Assignment[T]],mutable.Buffer[Item[E]]] = 
-      mutable.HashMap()
-    private lazy val conjVector:Vector[Conjunction[T]] = 
-      store.keySet.to(Vector)
-    private lazy val tVector:Vector[T] = 
-      conjVector.flatMap(_.map(_.it))
-    private given Ordering[Item[_]] = 
-      Ordering.by(_.priority)
+  case class Item[A](data:A,priority:Long = 0) extends Ordered[Item[A]]:
+    override def compare(that: Item[A]): Int = this.priority.compare(that.priority)
+    
+  case class SearchingZone[E,T](val key:String):
+    private[engine] lazy val store:mutable.HashMap[Seq[Assignment[T]],mutable.Buffer[Item[E]]] = mutable.HashMap()
+    private[engine] lazy val conjVector:Vector[Conjunction[T]] = store.keySet.to(Vector)
+    private[engine] lazy val tVector:Vector[T] = conjVector.flatMap(_.map(_.it))
+  object Searchine:
+    def apply[E,T<: Matchable : Ordering:ClassTag] = new Searchine[E,T,Ready.No.type]
+  sealed class Searchine[E,T<: Matchable :Ordering:ClassTag,A<:Ready] private:
+    val hash:mutable.HashMap[String,SearchingZone[E,T]] = mutable.HashMap()
+    def ready(using /*erased*/ A =:= Ready.No.type):Searchine[E,T,Ready.Yes.type] = 
+      hash.values.foreach{sz => 
+        // 排序
+        sz.store.mapValuesInPlace{(k,v) => v.sorted}
+        // 触发lazy的计算
+        sz.tVector
+      }
+      this.asInstanceOf[Searchine[E,T,Ready.Yes.type]]
     private given Ordering[Assignment[T]] = 
       Ordering.by[Assignment[T],T](_.it).orElseBy(_.flag)
-    @annotation.nowarn def load(using /*erased*/ A =:= Ready.No.type)
-    (cond: DNF[T]|T, e: E, priority: Long = 0): Searchine[E,T,Ready.No.type] = 
+    def load(using /*erased*/ A =:= Ready.No.type)
+    (zoneKey:String,cond: DNF[T]|T, e: E, priority: Long = 0):Searchine[E,T,A] = 
+      val searchingZone = hash.getOrElseUpdate(zoneKey,{SearchingZone[E,T](zoneKey)})
       cond match
-        case dnf:Seq[Seq[Assignment[T]]] => dnf.foreach{conj => 
-            store.getOrElseUpdate(conj.sorted,mutable.Buffer[Item[E]]()) += Item(e,priority)
-          }
-          this.asInstanceOf[Searchine[E,T,Ready.No.type]]
-        case t:T => load(Seq(Seq(Assignment(true,t))),e,priority)
-    def ready(using /*erased*/ A =:= Ready.No.type):Searchine[E,T,Ready.Yes.type] = {
-      // 排序
-      this.store.mapValuesInPlace{(k,v) => v.sorted}
-      // 触发lazy的计算
-      this.tVector
-      // 返回这个对象
-      this.asInstanceOf[Searchine[E,T,Ready.Yes.type]]
-    }
-    def search(using /*erased*/ A =:= Ready.Yes.type)(limit: Int, evaluator: Evaluator[T]): Seq[Item[E]] =
-      val res = tVector.map(it => it -> evaluator(it)).toMap
-      conjVector
-        .filter{conj => conj.forall{ass => res(ass.it) match
+        case dnf:DNF[T] => dnf.foreach{conj => searchingZone.store
+          .getOrElseUpdate(conj.sorted,mutable.Buffer[Item[E]]()) += Item(e,priority)
+        }
+        case t:T => searchingZone.store
+          .getOrElseUpdate(Seq(Assignment(true,t)),mutable.Buffer[Item[E]]()) += Item(e,priority)
+      this
+    def search(using /*erased*/ A =:= Ready.Yes.type)
+    (zoneKey:String,limit: Int, evaluator: Evaluator[T]):Seq[Item[E]] =
+      hash.get(zoneKey).map{ sz =>
+        val res = sz.tVector.map(it => it -> evaluator(it)).toMap
+        sz.conjVector.filter{conj => conj.forall{ass => res(ass.it) match
           case null => false
           case b:Boolean => !ass.flag ^ b
         }}
-        .flatMap{store.getOrElse(_,Seq()).take(limit)}
+        .flatMap{sz.store.getOrElse(_,Seq()).take(limit)}
         .sorted
         .take(limit)
-  object Searchine:
-    def apply[E,T:Ordering] = new Searchine[E,T,Ready.No.type]
-    def zoned[E,T:Ordering] = new ZonedSearchine[E,T,Ready.No.type]
-
-  class ZonedSearchine[E,T:Ordering,A<:Ready]:
-    val hash:mutable.HashMap[String,Searchine[E,T,A]] = mutable.HashMap()
-    def ready(using /*erased*/ A =:= Ready.No.type)
-    :ZonedSearchine[E,T,Ready.Yes.type] = 
-      hash.values.foreach(_.ready)
-      this.asInstanceOf[ZonedSearchine[E,T,Ready.Yes.type]]
-    def load(using /*erased*/ A =:= Ready.No.type)
-    (zoneKey:String,cond: DNF[T]|T, e: E, priority: Long = 0):ZonedSearchine[E,T,A] = 
-      hash
-        .getOrElseUpdate(zoneKey,{Searchine[E,T].asInstanceOf[Searchine[E,T,A]]})
-        .load(cond,e,priority)
-      this
-    def search(using /*erased*/ A =:= Ready.Yes.type)
-    (zoneKey:String,limit: Int, evaluator: Evaluator[T]): Seq[Item[E]] =
-      hash.get(zoneKey).map(_.search(limit,evaluator)).getOrElse(Seq())
+      }.getOrElse(Seq())

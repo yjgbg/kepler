@@ -4,8 +4,7 @@ import engine.*
 import biz.*
 object provider:
   import Targeting.*
-  lazy val store:ZonedSearchine[Creative, Targeting, Ready.Yes.type] = engine.Searchine
-    .zoned[Creative,Targeting]
+  lazy val store = engine.Searchine[Creative,Targeting]
     .load("IQIYI",Network.Network5G,Creative(10L,10L,20L,100))
     .load("IQIYI",Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30),Creative(20L,20L,20L,100))
     .load("IQIYI",Gender.Male && AgeBetween(18,23) ,Creative(20L,20L,30L,100))
