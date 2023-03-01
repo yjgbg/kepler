@@ -4,7 +4,6 @@ package adaptor
 import biz.Targeting.*
 import zio.{ZIO,Chunk}
 import zhttp.http.{Request,Response}
-import com.github.yjgbg.adserving.iqiyi.Response.Seatbid
 
 object IQIYI extends AdxAdaptor("IQIYI") with utils:
   override type State = iqiyi.Request.BidRequest

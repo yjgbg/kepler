@@ -1,21 +1,20 @@
+// 默认版本过低，会导致在m1 mac上找不到对应的protoc的包。
+// 后续版本升级之后，如果不再出现这个问题，可以考虑删掉这行
 ThisBuild / PB.protocVersion := "3.22.0" 
-
+ThisBuild / scalaVersion := "3.2.2"
 
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
     name := "protobuf",
-    scalaVersion := "3.2.2",
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value / "protobuf"
     )
   )
-// 默认版本过低，会导致在m1 mac上找不到对应的protoc的包。
-// 后续版本升级之后，如果不再出现这个问题，可以考虑删掉这行
+
 lazy val core = (project in file("./core"))
   .dependsOn(protobuf)
   .settings(
     name := "core",
-    scalaVersion := "3.2.2",
     libraryDependencies += "io.d11" %% "zhttp"  % "2.0.0-RC7",
     libraryDependencies += "com.outr" %% "scribe" % "3.11.1", // 日志，接入slf4j
     libraryDependencies += "io.d11" %% "zhttp-test" % "2.0.0-RC7" % Test,
