@@ -57,7 +57,7 @@ object engine:
       this.asInstanceOf[Searchine[E,T,Ready.Yes.type]]
     private given Ordering[Assignment[T]] = 
       Ordering.by[Assignment[T],T](_.it).orElseBy(_.flag)
-    def load(using /*erased*/ A =:= Ready.No.type)
+    @annotation.nowarn def load(using /*erased*/ A =:= Ready.No.type)
     (zoneKey:String,cond: DNF[T]|T, e: E, priority: Long = 0):Searchine[E,T,A] = 
       val searchingZone = hash.getOrElseUpdate(zoneKey,{SearchingZone[E,T](zoneKey)})
       cond match

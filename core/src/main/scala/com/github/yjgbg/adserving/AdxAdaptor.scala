@@ -7,7 +7,7 @@ trait AdxAdaptor(val adxCode:String):
   type ZoneKey = String
   type RequestId = String
   type State
-  def evaluator(chunk:zio.Chunk[Byte]|Null)
+  def evaluator(chunk:zio.Chunk[Byte])
     :zio.UIO[(Limit,State,RequestId,Seq[engine.Evaluator[biz.Targeting]])]
   def handler(state:State,seq:Seq[Seq[engine.Item[biz.Creative]]]):zhttp.http.Response
 
@@ -19,7 +19,7 @@ object AdxAdaptor:
     all.find{_.adxCode == adxCode}.getOrElse(fallback)
   val fallback:AdxAdaptor = new AdxAdaptor("fallback"):
     override type State = Unit
-    override def evaluator(chunk: zio.Chunk[Byte]|Null) = 
+    override def evaluator(chunk: zio.Chunk[Byte]) = 
       zio.ZIO.succeed((0,(),"fallback", Seq(engine.Evaludator{ _ => false})))
     override def handler(state:State,seq: Seq[Seq[engine.Item[biz.Creative]]]) = 
       zhttp.http.Response(zhttp.http.Status.NoContent)

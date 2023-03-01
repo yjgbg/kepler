@@ -18,7 +18,7 @@ object IQIYI extends AdxAdaptor("IQIYI") with utils:
     idType = utils.idType(imei,oaid,null,null)
     osUpperCase = lens.device.os.get(request) |> {_.toUpperCase}
     osv = lens.device.osVersion.get(request)
-  } yield (10,request,request.id.orNull,for (imp <- request.imp) yield engine.Evaludator {
+  } yield (10,request,request.id.orNull.nn,for (imp <- request.imp) yield engine.Evaludator {
     case AdxCode(code) => code == adxCode
     case network: Network => network == Network.Network5G
     case os: OS => os.toString() == osUpperCase
@@ -30,11 +30,11 @@ object IQIYI extends AdxAdaptor("IQIYI") with utils:
   override def handler(req:State,seq: Seq[Seq[engine.Item[biz.Creative]]]) = 
     val lens = scalapb.lenses.Lens.unit[iqiyi.Response.BidResponse]
     val bidResponse = iqiyi.Response.BidResponse(
-      id = req.id.orNull,
+      id = req.id.orNull.nn,
       seatbid = for ((imp,sr) <- req.imp.zip(seq)) yield iqiyi.Response.Seatbid(
         bid = sr.map{item => iqiyi.Response.Bid(
-          id = req.id.orNull,
-          impid =  imp.id.orNull,
+          id = req.id.orNull.nn,
+          impid =  imp.id.orNull.nn,
           price = item.data.price.toInt,
           adm = "adm",
           crid = item.data.id.toString
