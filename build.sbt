@@ -16,6 +16,8 @@ lazy val core = (project in file("./core"))
   .settings(
     name := "core",
     libraryDependencies += "io.d11" %% "zhttp"  % "2.0.0-RC7",
+    libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.2",
+    libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.2",
     libraryDependencies += "com.outr" %% "scribe" % "3.11.1", // 日志，接入slf4j
     libraryDependencies += "io.d11" %% "zhttp-test" % "2.0.0-RC7" % Test,
     scalacOptions += "-source:future", // 为了better-monadic-for
