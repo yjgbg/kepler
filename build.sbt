@@ -5,8 +5,8 @@ ThisBuild / scalaVersion := "3.2.2"
 ThisBuild / credentials += Credentials(
     "Sonatype Nexus Repository Manager",
     "oss.sonatype.org",
-    "yjgbg",
-    "Wcl13893283665~"
+    sys.env("SONATYPE_USERNAME"),
+    sys.env("SONATYPE_PASSWORD")
 )
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
