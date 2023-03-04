@@ -1,10 +1,12 @@
 package com.github.yjgbg.adserving
 
-import scala.annotation.targetName
-
 trait utils:
-  val objectMapper:com.fasterxml.jackson.databind.ObjectMapper = 
-    com.fasterxml.jackson.databind.ObjectMapper() 
+  extension [A](a:A)
+    def |>[B](f:A => B):B = f(a)
+  extension [A](a: A|Null)
+    def |>?[B](f: A => B|Null): B|Null = if a == null then null else f(a)
+    def |?(other:A):A = if a == null then other else a
+  val objectMapper = com.fasterxml.jackson.databind.ObjectMapper() 
     |> {_.registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule).nn}
   import biz.Targeting.IdType
   final def idType(
@@ -18,8 +20,4 @@ trait utils:
       else if (idfa != null) IdType.IDFA
       else if (cookie!=null) IdType.COOKIE
       else IdType.UNKNOWN
-  extension [A](a:A|Null) 
-    def ?>[B](f: A => B|Null): B|Null = if a == null then null else f(a)
-    def :?(other:A):A = if a == null then other else a
-  extension [A](a:A) def |>[B](f:A => B):B = f(a)
 object utils extends utils

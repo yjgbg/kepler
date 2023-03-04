@@ -14,7 +14,7 @@ import zhttp.http.Response
 import com.github.yjgbg.adserving.biz.Targeting.IdType
 import com.github.yjgbg.adserving.engine.Evaludator
 
-object BILIBILI extends Adaptor("BILIBILI") with utils:
+object BILIBILI extends adxAdaptor("BILIBILI") with utils:
   override type State = Request
 
   override def evaluator(chunk: Chunk[Byte]): UIO[(Limit, State, RequestId, Seq[Evaluator[Targeting]])] = for {

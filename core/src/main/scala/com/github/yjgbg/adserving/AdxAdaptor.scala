@@ -2,22 +2,21 @@ package com.github.yjgbg.adserving
 
 import zhttp.http.Response
 
-trait Adaptor(val adxCode:String):
+trait adxAdaptor(val adxCode:String):
   type Limit = Int
-  type ZoneKey = String
   type RequestId = String
   type State
   def evaluator(chunk:zio.Chunk[Byte])
     :zio.UIO[(Limit,State,RequestId,Seq[engine.Evaluator[biz.Targeting]])]
   def handler(state:State,seq:Seq[Seq[engine.Item[biz.Creative]]]):zhttp.http.Response
 
-object Adaptor:
-  private var all:Seq[Adaptor] = Vector(
+object adxAdaptor:
+  private var all:Seq[adxAdaptor] = Vector(
     adaptor.IQIYI,adaptor.BILIBILI
   )
-  def apply(adxCode:String):Adaptor = 
+  def apply(adxCode:String):adxAdaptor = 
     all.find{_.adxCode == adxCode}.getOrElse(fallback)
-  val fallback:Adaptor = new Adaptor("fallback"):
+  val fallback:adxAdaptor = new adxAdaptor("fallback"):
     override type State = Unit
     override def evaluator(chunk: zio.Chunk[Byte]) = 
       zio.ZIO.succeed((0,(),"fallback", Seq(engine.Evaludator{ _ => false})))

@@ -1,7 +1,5 @@
 package com.github.yjgbg.adserving
 
-import scala.reflect.ClassTag
-import scala.reflect.TypeTest
 import scala.collection.mutable.SortedSet
 
 object engine:
@@ -50,7 +48,7 @@ object engine:
     private[engine] lazy val conjVector:Vector[Conjunction[T]] = store.keySet.to(Vector)
     private[engine] lazy val tVector:Vector[T] = conjVector.flatMap(_.map(_.it))
   object Searchine:
-    def apply[E,T<: Matchable : Ordering:ClassTag] = new Searchine[E,T,Ready.No.type]
+    def apply[E,T<: Matchable : Ordering] = new Searchine[E,T,Ready.No.type]
   sealed class Searchine[E,T<: Matchable :Ordering,A<:Ready] private:
     val hash:mutable.HashMap[String,SearchingZone[E,T]] = mutable.HashMap()
     private val _statistic:mutable.HashMap[E,Long] = mutable.HashMap()

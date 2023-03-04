@@ -4,8 +4,9 @@ package adaptor
 import biz.Targeting.*
 import zio.{ZIO,Chunk}
 import zhttp.http.{Request,Response}
+import com.github.yjgbg.adserving.biz.Targeting.OS.ANDROID
 
-object IQIYI extends Adaptor("IQIYI") with utils:
+object IQIYI extends adxAdaptor("IQIYI") with utils:
   override type State = iqiyi.Request.BidRequest
   override def evaluator(chunk:zio.Chunk[Byte]) = for {
     _ <- ZIO.unit
