@@ -27,7 +27,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       - name: Move File
         run: |
-              find target/colima -type f|grep '.yaml'|xargs -I {} sh -c 'yq -i -P \"sort_keys(..)\" {}'
+              find target/colima -type f|grep '.yaml'|xargs -I {} sh -c 'yq -i -P "sort_keys(..)" {}'
               cp -r target/colima devops/colima/snapshot/$(date '+%Y%m%d%H%M')
               rm -rf devops/colima/latest
               cp -r target/colima devops/colima/latest
