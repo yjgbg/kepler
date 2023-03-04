@@ -33,13 +33,6 @@ jobs:
         uses: EndBug/add-and-commit@v9.1.1
         with:
           add: 'devops/colima'
+          push: true
           message: 'ci'
-          committer_name: bot
-          committer_email: bot@noreply.com
-          push: false
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
 
