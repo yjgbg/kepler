@@ -36,6 +36,7 @@ jobs:
           message: 'ci'
           committer_name: bot
           committer_email: bot@noreply.com
+          push: false
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
