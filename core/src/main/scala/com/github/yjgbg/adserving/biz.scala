@@ -9,7 +9,7 @@ object biz:
   case class AdUnit(val id:Long,adxId:Long) // 广告位
   case class AdUnitMaterialTemplateCompatible(val id:Long,adUnitId:Long,materialTemplateId:Long)
   case class Advertiser(val id:Long,name:String) // 广告主
-  case class Adx(val id:Long,name:String,code:String,eval:Targeting => Unit)
+  case class Adx(val id:Long,name:String,code:String)
   sealed trait Targeting
   given [A <: Targeting]:Ordering[A] = Ordering.by(_.toString())
   object Targeting:
