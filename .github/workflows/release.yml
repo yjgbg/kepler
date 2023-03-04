@@ -10,10 +10,12 @@ jobs:
       - uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v14
+      - name: SBT action test
+        id: sbt
+        uses: lokkju/github-action-sbt@master
         with:
-          java-version: openjdk@1.11
-      - run: sbt "project keplerJsonDsl" publish
+          commands: "project keplierJsonDsl" publish
+          sbt_project_directory: ./
         env:
-          SONATYPE_PASSWORD: 123
-          SONATYPE_USERNAME: 34
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
