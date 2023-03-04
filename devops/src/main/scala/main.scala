@@ -1,8 +1,8 @@
 import com.github.yjgbg.json.KubernetesDsl.*
-@main def colima = context("colima","apply --server-side=true") {
+@main def colima = context("colima") {
   namespace("default") {
     deployment("") {
-      
+
     }
   }
 }
