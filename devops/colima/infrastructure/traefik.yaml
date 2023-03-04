@@ -26,3 +26,4 @@ spec:
         name: traefik
       version: 21.1.0
   interval: 1m0s
+# 访问地址是：http://127.0.0.1:9000/dashboard/
