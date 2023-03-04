@@ -1,0 +1,9 @@
+metadata:
+  name: nginx
+  namespace: default
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - image: nginx
+    name: nginx
