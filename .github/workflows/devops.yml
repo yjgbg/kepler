@@ -22,12 +22,9 @@ jobs:
           version: 1.8.0
       - name: Run Sbt
         run: sbt "project devops" run
-        env:
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       - name: Move File
         run: |
-              cp -r target/colima devops/colima/snapshot/$(date +%s)
+              cp -r target/colima devops/colima/snapshot/$(date '+%Y%m%d%H%M')
               cp -r target/colima/ devops/colima/latest
       - name: Add & Commit
         uses: EndBug/add-and-commit@v9.1.1
