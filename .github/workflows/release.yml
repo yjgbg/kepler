@@ -17,7 +17,7 @@ jobs:
       - uses: Jtalk/setup-sbt@v2
         with:
           version: 1.8.0
-      - run: sbt "project keplierJsonDsl" publish
+      - run: sbt "project keplerJsonDsl" publish
         env:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
