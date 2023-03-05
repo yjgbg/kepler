@@ -122,7 +122,7 @@ trait KubernetesEnhenceDsl:
       val ammExecPath = s"$ammDownloadPath/${ammVersion}_$scalaVersion"
       val downloadFile = s"/tmp/ammonite-download"
       val ammDownloadUrl =
-        s"https://github.com/lihaoyi/ammonite/releases/download/${ammVersion.split("-")(0)}/$scalaVersion-$ammVersion"
+        s"https://github.com/lihaoyi/ammonite/releases/download/${ammVersion.split("-").nn.head}/$scalaVersion-$ammVersion"
       fileLiteralText("amm",s"""
         |#!/usr/bin/env sh
         |set -e
@@ -133,7 +133,7 @@ trait KubernetesEnhenceDsl:
         |  mv "$downloadFile" "$ammExecPath"
         |fi
         |exec ${ammExecPath} "${"$"}@"
-        |""".stripMargin.stripLeading().stripTrailing())
+        |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
     }
     prepareAmmonite()
     if (!ammoniteInited.getOrElse(summon,false)) {
@@ -148,7 +148,7 @@ trait KubernetesEnhenceDsl:
       command("sh","-c",s"""
         |chmod -R a+x /workspace/amm
         |/workspace/amm /workspace/script.sc
-        |""".stripMargin.stripLeading().stripTrailing())
+        |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
       closure.apply
     }
   }
@@ -177,7 +177,7 @@ trait KubernetesEnhenceDsl:
         |port = $port
         |username = $username
         |password = $password
-        |""".stripMargin.stripLeading().stripTrailing())
+        |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
       val cmd = amqpScope.map.zipWithIndex.map{(kv,i) => 
         fileLiteralText(s"$i.json",kv._2)
         s"./rabbitmqadmin -c amqp.conf -N default -V ${kv._1} import ${i}.json"
@@ -186,7 +186,7 @@ trait KubernetesEnhenceDsl:
         |curl 'http://$host:$port/cli/rabbitmqadmin' > rabbitmqadmin
         |chmod -R a+x rabbitmqadmin
         |$cmd
-        |""".stripMargin.stripLeading().stripTrailing())
+        |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
     }
     (if init then initContainer else container)(s"amqp-topo-$host-$port",image) {
       volumeMounts(name -> "/workspace")

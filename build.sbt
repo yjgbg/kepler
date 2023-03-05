@@ -8,6 +8,11 @@ ThisBuild / credentials += Credentials(
   sys.env.getOrElse("SONATYPE_USERNAME", "SONATYPE_USERNAME"),
   sys.env.getOrElse("SONATYPE_PASSWORD", "SONATYPE_USERNAME")
 )
+lazy val versionCirce = "0.14.1"
+lazy val versionJackson = "2.14.2"
+lazy val versionScribe = "3.11.1"
+lazy val versionZio = "2.0.9"
+lazy val versionZhttp = "2.0.0-RC7"
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
     name := "protobuf",
@@ -19,15 +24,15 @@ lazy val core = (project in file("./core"))
   .dependsOn(protobuf)
   .settings(
     name := "core",
-    libraryDependencies += "io.d11" %% "zhttp" % "2.0.0-RC7",
-    libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.14.2",
-    libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.2",
-    libraryDependencies += "com.outr" %% "scribe" % "3.11.1",
+    libraryDependencies += "io.d11" %% "zhttp" % versionZhttp,
+    libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % versionJackson,
+    libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % versionJackson,
+    libraryDependencies += "com.outr" %% "scribe" % versionScribe,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-test" % "2.0.9" % Test,
-      "dev.zio" %% "zio-test-sbt" % "2.0.9" % Test,
-      "dev.zio" %% "zio-test-magnolia" % "2.0.9" % Test,
-      "io.d11" %% "zhttp-test" % "2.0.0-RC7" % Test
+      "dev.zio" %% "zio-test" % versionZio % Test,
+      "dev.zio" %% "zio-test-sbt" % versionZio % Test,
+      "dev.zio" %% "zio-test-magnolia" % versionZio % Test,
+      "io.d11" %% "zhttp-test" % versionZhttp % Test
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
     scalacOptions += "-source:future", // 为了better-monadic-for
@@ -41,16 +46,17 @@ lazy val core = (project in file("./core"))
     assemblyJarName := "app.jar",
     outputStrategy := Some(StdoutOutput) // sbt中打日志的配置
   )
-lazy val circeVersion = "0.14.1"
 lazy val keplerJsonDsl = (project in file("./json-dsl"))
   .settings(
     name := "kepler-json-dsl",
     version := "1.0.0-SNAPSHOT",
     organization := "com.github.yjgbg",
-    libraryDependencies += "io.circe" %% "circe-core" % circeVersion,
-    libraryDependencies += "io.circe" %% "circe-generic" % circeVersion,
-    libraryDependencies += "io.circe" %% "circe-parser" % circeVersion,
-    libraryDependencies += "io.circe" %% "circe-yaml" % circeVersion,
+    libraryDependencies += "io.circe" %% "circe-core" % versionCirce,
+    libraryDependencies += "io.circe" %% "circe-generic" % versionCirce,
+    libraryDependencies += "io.circe" %% "circe-parser" % versionCirce,
+    libraryDependencies += "io.circe" %% "circe-yaml" % versionCirce,
+    scalacOptions += "-source:future", // 为了better-monadic-for
+    scalacOptions += "-Yexplicit-nulls", //  因为protoc编译出的代码不支持explicit null，会导致编译失败，因此注释掉这行
     publishMavenStyle := true,
     publishTo := Some {
       if (isSnapshot.value) Opts.resolver.sonatypeSnapshots

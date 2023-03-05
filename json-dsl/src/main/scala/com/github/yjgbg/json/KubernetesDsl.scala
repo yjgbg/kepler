@@ -25,7 +25,7 @@ trait KubernetesDsl extends JsonDsl:
   class NamespaceScope(private[KubernetesDsl] val context:ContextScope,val name:String,var resourceSeq:Seq[Resource])
   class ContextScope(val name:String,var namespaces:Seq[NamespaceScope])
   def context(name: String, operation: "apply"|"create"|"delete"|"apply --server-side=true"|Null = null)(closure: ContextScope ?=> Unit) = {
-    import sys.process._
+    import sys.process.*
     s"rm -rf target/$name/".! // 清理掉工作区
     val contextScope = ContextScope(name,Seq())
     closure(using contextScope) // 执行dsl
@@ -34,12 +34,11 @@ trait KubernetesDsl extends JsonDsl:
       res <- ns.resourceSeq
     } writeYaml(s"target/${name}/${ns.name}-${res.name}.yaml")(res.json)
     if (operation!=null) {
-      val currentContext = "kubectl config get-contexts".!!.lines()
-        .filter(it => it.contains("*"))
-        .findAny()
-        .orElseThrow()
-        .split(" ")
-        .filter(!_.isBlank())(1) // 获取当前context
+      val currentContext = "kubectl config get-contexts".!!.linesIterator
+        .find(_.contains("*"))
+        .getOrElse(throw RuntimeException())
+        .split(" ").nn
+        .filter(!_.nn.isBlank())(1) // 获取当前context
       if (currentContext != name) s"kubectl config use-context ${name}".! // 切换上下文
       s"kubectl ${operation} -f target/${name}".! // 应用yaml
       if (currentContext != name) s"kubectl config use-context ${currentContext}".! // 切换上下文
@@ -78,7 +77,7 @@ trait KubernetesDsl extends JsonDsl:
     service("nodeport-"+nodePort) {
       spec {
         "type" := "NodePort"
-        this.selector(selector:_*)
+        this.selector(selector*)
         "ports" ++= {
           "protocol" := "TCP"
           "targetPort" := targetPort.toLong
@@ -91,7 +90,7 @@ trait KubernetesDsl extends JsonDsl:
     service("nodeport-"+nodePort) {
       spec {
         "type" := "NodePort"
-        this.selector(selector:_*)
+        this.selector(selector*)
         "ports" ++= {
           "protocol" := "UDP"
           "targetPort" := targetPort.toLong
@@ -104,7 +103,7 @@ trait KubernetesDsl extends JsonDsl:
     service("nodeport-"+nodePort) {
       spec {
         "type" := "NodePort"
-        this.selector(selector:_*)
+        this.selector(selector*)
         "ports" ++= {
           "protocol" := "SCTP"
           "targetPort" := targetPort.toLong
@@ -231,7 +230,7 @@ trait KubernetesDsl extends JsonDsl:
   def volumeEmptyDir(using PodScope >> SpecScope)(name:String) :Unit = 
     "volumes" ++= {"name" := name;"emptyDir" ::= {}}
   // items 是一个key to path 的元组
-  def volumeConfigMap(using PodScope >> SpecScope)(name:String,configMap:String = null,items:(String,String)*):Unit = 
+  def volumeConfigMap(using PodScope >> SpecScope)(name:String,configMap:String|Null = null,items:(String,String)*):Unit = 
     "volumes" ++= {
       "name" := name
       "configMap" ::= {
@@ -243,7 +242,7 @@ trait KubernetesDsl extends JsonDsl:
       }
     }
 
-  def volumePVC(using PodScope >> SpecScope)(name:String,pvcName:String = null)= 
+  def volumePVC(using PodScope >> SpecScope)(name:String,pvcName:String|Null = null)= 
     "volumes" ++= {
       "name" := name
       "persistentVolumeClaim" ::= {
