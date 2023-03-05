@@ -8,6 +8,10 @@ object engine:
   opaque type DNF[+A] = Seq[Conjunction[A]]
   object DNF:
     def apply[A](it:Seq[Seq[Assignment[A]]]):DNF[A] = it
+    def any[A:Ordering](a:IterableOnce[DNF[A]|A]):DNF[A]|Null = 
+      a.map{x => ! (! x)}.reduceOption{(a,b) => a || b}.orNull
+    def all[A:Ordering](a:IterableOnce[DNF[A]|A]):DNF[A]|Null = 
+      a.map{x => ! (! x)}.reduceOption{(a,b) => a && b}.orNull
   // 命题的真值，真，假，无法判定
   // 其对应的否命题真值分别为： 假，真，无法判定
   type ER = Boolean | Null
