@@ -1,4 +1,10 @@
 
+import zio.test.*
 
-@main def main = {
+object ExampleSpec extends ZIOSpecDefault {
+  def spec = suite("clock")(
+    test("foo") {
+      assertTrue(true)
+    }
+  )
 }
