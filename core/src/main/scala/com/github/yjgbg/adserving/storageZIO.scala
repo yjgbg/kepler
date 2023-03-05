@@ -4,7 +4,7 @@ import engine.*
 import biz.Targeting.*
 import biz.Creative
 
-val storageZIO:zio.Task[Searchine[Creative,biz.Targeting,Ready.Yes.type]] = zio.ZIO.succeed{
+val storageZIO = zio.ZIO.succeed{
   Searchine[Creative,biz.Targeting]
   .load(
     "IQIYI",1L, // 分区，可被search的次数

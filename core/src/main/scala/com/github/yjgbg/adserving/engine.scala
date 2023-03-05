@@ -7,15 +7,19 @@ object engine:
   opaque type Conjunction[+A] = Seq[Assignment[A]]
   opaque type DNF[+A] = Seq[Conjunction[A]]
   object DNF:
-    def apply[A](it:Seq[Seq[Assignment[A]]]):DNF[A] = it
+    @annotation.nowarn def apply[A](dnfOrA:DNF[A]|Seq[Seq[Assignment[A]]]|A):DNF[A] = 
+      dnfOrA match
+        case dnf:Seq[Seq[Assignment[A]]] => dnf
+        case a:A => Seq(Seq(Assignment(true,a)))
     def any[A:Ordering](a:IterableOnce[DNF[A]|A]):DNF[A]|Null = 
-      a.map{x => ! (! x)}.reduceOption{(a,b) => a || b}.orNull
+      a.iterator.map(DNF.apply).reduceOption{(a,b) => a || b}.orNull
     def all[A:Ordering](a:IterableOnce[DNF[A]|A]):DNF[A]|Null = 
-      a.map{x => ! (! x)}.reduceOption{(a,b) => a && b}.orNull
+      a.iterator.map(DNF.apply).reduceOption{(a,b) => a && b}.orNull
   // 命题的真值，真，假，无法判定
   // 其对应的否命题真值分别为： 假，真，无法判定
   type ER = Boolean | Null
   opaque type Evaluator[A] = A => ER
+  // 以下几个函数考虑了性能，因此降低了可读性
   extension [A:Ordering](self:DNF[A]|A)
     @annotation.nowarn def unary_! : DNF[A] = self match
       case dnf:DNF[A] => dnf.map{conj => conj.toSeq.map{case Assignment(flag,it) => Seq(Assignment(!flag,it))}}.reduce(_ && _)
