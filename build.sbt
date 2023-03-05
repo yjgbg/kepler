@@ -13,6 +13,7 @@ lazy val versionJackson = "2.14.2"
 lazy val versionScribe = "3.11.1"
 lazy val versionZio = "2.0.9"
 lazy val versionZhttp = "2.0.0-RC7"
+lazy val versionSconfig = "1.5.0"
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
     name := "protobuf",
@@ -20,7 +21,7 @@ lazy val protobuf = (project in file("./protobuf"))
       scalapb.gen() -> (Compile / sourceManaged).value / "protobuf"
     )
   )
-lazy val core = (project in file("./core"))
+lazy val adMachine = (project in file("./ad-machine"))
   .dependsOn(protobuf)
   .settings(
     name := "core",
@@ -28,6 +29,7 @@ lazy val core = (project in file("./core"))
     libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % versionJackson,
     libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % versionJackson,
     libraryDependencies += "com.outr" %% "scribe" % versionScribe,
+    libraryDependencies += "org.ekrich" %% "sconfig" % versionSconfig,
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-test" % versionZio % Test,
       "dev.zio" %% "zio-test-sbt" % versionZio % Test,
