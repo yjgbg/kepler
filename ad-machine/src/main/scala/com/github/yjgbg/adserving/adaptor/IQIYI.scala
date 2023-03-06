@@ -2,15 +2,14 @@ package com.github.yjgbg.adserving
 package adaptor
 
 import biz.Targeting.*
-import zio.{ZIO,Chunk}
+import zio.ZIO
 import zhttp.http.{Request,Response}
-import com.github.yjgbg.adserving.biz.Targeting.OS.ANDROID
 
 object IQIYI extends adxAdaptor("IQIYI") with utils:
   override type State = iqiyi.Request.BidRequest
-  override def evaluator(chunk:zio.Chunk[Byte]) = for {
+  override def evaluator(byteArray:Array[Byte]) = for {
     _ <- ZIO.unit
-    request = iqiyi.Request.BidRequest.parseFrom(chunk.toArray)
+    request = iqiyi.Request.BidRequest.parseFrom(byteArray)
     lens = scalapb.lenses.Lens.unit[iqiyi.Request.BidRequest]
     imei = lens.device.imei.get(request)
     oaid = lens.device.oaid.get(request)
@@ -45,5 +44,5 @@ object IQIYI extends adxAdaptor("IQIYI") with utils:
       headers = zhttp.http.Headers(
         "ContentType" -> "application/protobuf"
       ),
-      data = zhttp.http.HttpData.fromChunk(Chunk.fromArray(bidResponse.toByteArray))
+      body = zhttp.http.Body.fromChunk(zio.Chunk.fromArray(bidResponse.toByteArray))
     )

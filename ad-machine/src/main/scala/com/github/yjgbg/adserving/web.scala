@@ -22,12 +22,12 @@ object web extends ZIOAppDefault {
   def app(storage:engine.Searchine[biz.Creative,biz.Targeting,engine.Ready.Yes.type]) =
     Http.collectZIO[Request] {
       case req @ Method.POST -> !! / "bid" => for {
-        chunk <- req.body
+        byteArray <- req.body.asArray
         adxCode = req.url.queryParams("adx").head
         nid = req.url.queryParams("nid").head
         _ = scribe.info(s"adxCode:${adxCode},nid:${nid}")
         adaptor = adxAdaptor(adxCode)
-        (limit,state,id,evaluatorSeq) <- adaptor.evaluator(chunk)
+        (limit,state,id,evaluatorSeq) <- adaptor.evaluator(byteArray)
         searchResult = evaluatorSeq.map(
           evaluator => storage.search(adxCode+"-"+nid,limit,evaluator)
         )

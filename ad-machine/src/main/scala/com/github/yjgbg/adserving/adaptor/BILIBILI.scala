@@ -1,8 +1,6 @@
 package com.github.yjgbg.adserving
 package adaptor
 
-import zio.Chunk
-
 import com.github.yjgbg.adserving.engine.Evaluator
 
 import com.github.yjgbg.adserving.biz.Targeting
@@ -17,9 +15,9 @@ import com.github.yjgbg.adserving.engine.Evaludator
 object BILIBILI extends adxAdaptor("BILIBILI") with utils:
   override type State = Request
 
-  override def evaluator(chunk: Chunk[Byte]): UIO[(Limit, State, RequestId, Seq[Evaluator[Targeting]])] = for {
+  override def evaluator(byteArray: Array[Byte]): UIO[(Limit, State, RequestId, Seq[Evaluator[Targeting]])] = for {
     _ <- zio.ZIO.unit
-    request = objectMapper.readValue(chunk.toArray, classOf[Request]).nn
+    request = objectMapper.readValue(byteArray, classOf[Request]).nn
   } yield (10,request,request.id.toString(),Seq(Evaludator { 
     case _ => true
   }))
@@ -28,7 +26,7 @@ object BILIBILI extends adxAdaptor("BILIBILI") with utils:
     Response(
       status = zhttp.http.Status.Ok,
       headers = zhttp.http.Headers("ContentType", "application/json"),
-      data = zhttp.http.HttpData.fromString(objectMapper.writeValueAsString(response).nn)
+      body = zhttp.http.Body.fromString(objectMapper.writeValueAsString(response).nn)
     )
   }
 

@@ -8,11 +8,12 @@ ThisBuild / credentials += Credentials(
   sys.env.getOrElse("SONATYPE_USERNAME", "SONATYPE_USERNAME"),
   sys.env.getOrElse("SONATYPE_PASSWORD", "SONATYPE_USERNAME")
 )
-lazy val versionCirce = "0.14.1"
+lazy val versionCirce = "0.14.5"
 lazy val versionJackson = "2.14.2"
 lazy val versionScribe = "3.11.1"
 lazy val versionZio = "2.0.9"
-lazy val versionZhttp = "2.0.0-RC7"
+lazy val versionZhttp = "2.0.0-RC11"
+lazy val versionZhttpTest = "2.0.0-RC9"
 lazy val versionSconfig = "1.5.0"
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
@@ -34,7 +35,7 @@ lazy val adMachine = (project in file("./ad-machine"))
       "dev.zio" %% "zio-test" % versionZio % Test,
       "dev.zio" %% "zio-test-sbt" % versionZio % Test,
       "dev.zio" %% "zio-test-magnolia" % versionZio % Test,
-      "io.d11" %% "zhttp-test" % versionZhttp % Test
+      "io.d11" %% "zhttp-test" % versionZhttpTest % Test
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
     scalacOptions += "-source:future", // 为了better-monadic-for
