@@ -15,7 +15,7 @@ trait KubernetesEnhenceDsl:
         }
       }
     }
-  private[KubernetesEnhenceDsl] case class ImagePathFile(key:String, image:String, path:String)
+  private[KubernetesEnhenceDsl] case class ImagePathFile(key:String, image:String, path:String, initScripts:Seq[String])
   private[KubernetesEnhenceDsl] case class LiteralTextFile(key:String, text:String)
   class VolumeCustomScope {
     private[KubernetesEnhenceDsl] var imagePathFileSeq:Seq[ImagePathFile] = Seq()
@@ -43,14 +43,21 @@ trait KubernetesEnhenceDsl:
         .map{(vn,ltf) => s"""echo "${"$"}{$vn}" > /literal/${ltf.key};chmod 777 /literal/${ltf.key}"""}
         .mkString("\n"))
     }
-    vcs.imagePathFileSeq
-      .groupMap(_.image)(it => it.key -> it.path)
-      .foreach{ (image,seq) => 
-        initContainer(name+"-"+atomicInt.getAndAdd(1),image) {
-          volumeMounts(name -> s"/tmp/vol")
-          command("sh","-c",seq.map{ (key,path) => s"rm -rf /tmp/vol/$key\nmkdir -p /tmp/vol\ncp -a $path /tmp/vol/$key" }.mkString("\n"))
-        }
+    vcs.imagePathFileSeq.foreach { case ImagePathFile(key,image,path,initScripts) => 
+      initContainer(key+"-"+atomicInt.getAndAdd(1),image) {
+        imagePullPolicy("IfNotPresent")
+        volumeMounts(name -> s"/tmp/vol")
+        initScripts.zipWithIndex.foreach {(it,index) => env(s"INIT_$index" -> it)}
+        command("sh","-c",
+          s"""|
+          |rm -rf /tmp/vol/$key
+          |${(0 until initScripts.length).map{it => s"echo '${"$"}INIT_$it'|sh"}.mkString("\n")}
+          |mkdir -p /tmp/vol
+          |cp -a $path /tmp/vol/$key
+          |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn
+        )
       }
+    }
   }
   /**
     * 声明一个自定义文本文件，并且会赋予777权限
@@ -68,9 +75,9 @@ trait KubernetesEnhenceDsl:
     * @param image 文件所在的镜像
     * @param path 文件在镜像中所在的目录
     */
-  def fileImagePath(using VolumeCustomScope)(fileName:String,image:String,path:String):Unit =
+  def fileImagePath(using VolumeCustomScope)(fileName:String,image:String,path:String,scripts:String*):Unit =
     summon[VolumeCustomScope].imagePathFileSeq = 
-      summon[VolumeCustomScope].imagePathFileSeq :+ ImagePathFile(fileName,image,path)
+      summon[VolumeCustomScope].imagePathFileSeq :+ ImagePathFile(fileName,image,path,scripts)
   /**
     *  创建一个到远程服务器的代理
     *

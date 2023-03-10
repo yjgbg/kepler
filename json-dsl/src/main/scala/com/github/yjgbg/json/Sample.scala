@@ -19,28 +19,28 @@ object Sample {
               labels("app" -> "gateway")
               spec {
                 volumeCustom("www") {
-                  fileImagePath("www","reg2.hypers.cc/has-frontend:latest","/usr/share/nginx/www")
-                  fileLiteralText("nginx.conf","""
-                    |server {
-                    |  listen 80;
-                    |  location / {
-                    |    
-                    |  }
-                    |}
-                    |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
-                  fileLiteralText( "0.script.sh", "echo 'hello' > /hello.txt")
+                  fileImagePath("www","reg2.hypers.cc/has-frontend:latest","/usr/share/nginx/www","echo 'hello'")
+                  // fileLiteralText("nginx.conf","""
+                  //   |server {
+                  //   |  listen 80;
+                  //   |  location / {
+                  //   |    
+                  //   |  }
+                  //   |}
+                  //   |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
+                  // fileLiteralText("0.script.sh", "echo 'hello' > /hello.txt")
                 }
                 container("app", "nginx:alpine") {
                   volumeMounts("www" -> "/usr/share/nginx/www")
                   env("k0" -> "v0")
                 }
-                rabbitmqTopo("username","password","localhost",init = true) {
-                  for (x <- Array("/has","/has-saas","/has-test")) vHost(x) {
-                    exchange("aaa")
-                    queue("queue0")
-                    binding("aaa","direct","queue0")
-                  }
-                }
+                // rabbitmqTopo("username","password","localhost",init = true) {
+                //   for (x <- Array("/has","/has-saas","/has-test")) vHost(x) {
+                //     exchange("aaa")
+                //     queue("queue0")
+                //     binding("aaa","direct","queue0")
+                //   }
+                // }
               }
             }
           }

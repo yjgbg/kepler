@@ -9,6 +9,7 @@ ThisBuild / credentials += Credentials(
   sys.env.getOrElse("SONATYPE_PASSWORD", "SONATYPE_USERNAME")
 )
 lazy val versionCirce = "0.14.5"
+lazy val versionCirceYaml = "0.14.2"
 lazy val versionJackson = "2.14.2"
 lazy val versionScribe = "3.11.1"
 lazy val versionZio = "2.0.9"
@@ -57,7 +58,7 @@ lazy val keplerJsonDsl = (project in file("./json-dsl"))
     libraryDependencies += "io.circe" %% "circe-core" % versionCirce,
     libraryDependencies += "io.circe" %% "circe-generic" % versionCirce,
     libraryDependencies += "io.circe" %% "circe-parser" % versionCirce,
-    libraryDependencies += "io.circe" %% "circe-yaml" % versionCirce,
+    libraryDependencies += "io.circe" %% "circe-yaml" % versionCirceYaml,
     scalacOptions += "-source:future", // 为了better-monadic-for
     scalacOptions += "-Yexplicit-nulls", //  因为protoc编译出的代码不支持explicit null，会导致编译失败，因此注释掉这行
     publishMavenStyle := true,
