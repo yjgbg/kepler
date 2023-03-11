@@ -1,26 +1,35 @@
-apiVersion: source.toolkit.fluxcd.io/v1beta2
-kind: GitRepository
+apiVersion: integreatly.org/v1alpha1
+kind: Grafana
 metadata:
-  name: grafana-operator
-  namespace: flux-system
+  name: grafana-service
+  namespace: grafana-operator-system
 spec:
-  gitImplementation: go-git
-  interval: 10s
-  ref:
-    branch: master
-  timeout: 60s
-  url: https://github.com/grafana-operator/grafana-operator.git
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
-kind: Kustomization
-metadata:
-  name: grafana-operator
-  namespace: flux-system
-spec:
-  force: false
-  interval: 10s
-  path: ./deploy/manifests
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: grafana-operator
+  client:
+    preferService: true
+  config:
+    # log:
+    #   mode: "console"
+    #   level: "error"
+    # log.frontend:
+    #   enabled: true
+    # auth:
+    #   disable_login_form: False
+    #   disable_signout_menu: True
+    # auth.anonymous:
+    #   enabled: True
+  service:
+    name: "grafana-service"
+    labels:
+      app: "grafana"
+      type: "grafana-service"
+  # dashboardLabelSelector:
+  #   - matchExpressions:
+  #       - { key: app, operator: In, values: [grafana] }
+  resources:
+    # Optionally specify container resources
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
