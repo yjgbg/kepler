@@ -25,9 +25,9 @@ spec:
     labels:
       app: "grafana"
       type: "grafana-service"
-  # dashboardLabelSelector:
-  #   - matchExpressions:
-  #       - { key: app, operator: In, values: [grafana] }
+  dashboardLabelSelector:
+    - matchExpressions:
+        - { key: app, operator: In, values: [grafana] }
   resources:
     # Optionally specify container resources
     limits:
@@ -36,3 +36,24 @@ spec:
     requests:
       cpu: 100m
       memory: 100Mi
+---
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDataSource
+metadata:
+  name: prometheus-operated
+  namespace: grafana-operator-system
+  labels:
+    app: grafana
+spec:
+  name: prometheus
+  datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-operated.prometheus:9090
+      isDefault: true
+      version: 1
+      editable: true
+      jsonData:
+        tlsSkipVerify: true
+        timeInterval: "5s"
