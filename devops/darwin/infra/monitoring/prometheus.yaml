@@ -5,14 +5,18 @@ metadata:
   namespace: monitoring
 spec:
   replicas: 1
-  serviceMonitorSelector: 
-    metrics: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      metrics: prometheus
   ruleSelector: 
-    metrics: prometheus
+    matchLabels:
+      metrics: prometheus
   podMonitorSelector: 
-    metrics: prometheus
-  probeSelector: 
-    metrics: prometheus
+    matchLabels:
+      metrics: prometheus
+  # probeSelector: 
+  #   matchLabels:
+  #     metrics: prometheus
   # alerting:
   #   alertmanagers:
   #     - namespace: monitoring
