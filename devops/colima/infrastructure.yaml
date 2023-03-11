@@ -1,0 +1,53 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: cert-manager
+  namespace: flux-system
+spec:
+  interval: 10s
+  path: ./devops/colima/infrastructure/cert-manager.yaml
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kepler
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: prometheus
+  namespace: flux-system
+spec:
+  interval: 10s
+  path: ./devops/colima/infrastructure/prometheus.yaml
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kepler
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: traefik-basic
+  namespace: flux-system
+spec:
+  interval: 10s
+  path: ./devops/colima/infrastructure/traefik-basic.yaml
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kepler
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: traefik-routing
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: traefik-basic
+  interval: 10s
+  path: ./devops/colima/infrastructure/traefik-routing.yaml
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kepler
