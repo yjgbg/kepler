@@ -12,6 +12,9 @@ spec:
       level: "error"
     log.frontend:
       enabled: true
+    security:
+      admin_user: "admin"
+      admin_password: "admin"
     # auth:
     #   disable_login_form: False
     #   disable_signout_menu: True
