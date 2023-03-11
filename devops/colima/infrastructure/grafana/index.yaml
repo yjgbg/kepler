@@ -6,7 +6,7 @@ metadata:
 spec:
   client:
     preferService: true
-  config:
+  # config:
     # log:
     #   mode: "console"
     #   level: "error"
