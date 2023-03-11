@@ -29,4 +29,3 @@ spec:
     services:
     - name: grafana
       namespace: monitoring
-      port: 3000
