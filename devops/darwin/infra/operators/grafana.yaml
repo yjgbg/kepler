@@ -3,6 +3,9 @@ kind: OperatorGroup
 metadata:
   name: operatorgroup
   namespace: operators
+spec:
+  targetNamespaces:
+  - monitor
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
