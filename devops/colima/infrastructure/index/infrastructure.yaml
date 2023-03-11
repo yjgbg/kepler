@@ -46,7 +46,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/colima/infrastructure/traefik-basic
+  path: ./devops/colima/infrastructure/helm-traefik-basic
   prune: true
   sourceRef:
     kind: GitRepository
@@ -62,6 +62,19 @@ spec:
     - name: index-traefik-basic
   interval: 10s
   path: ./devops/colima/infrastructure/traefik-routing
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kepler
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: index-prometheus
+  namespace: flux-system
+spec:
+  interval: 10s
+  path: ./devops/colima/infrastructure/helm-prometheus
   prune: true
   sourceRef:
     kind: GitRepository
