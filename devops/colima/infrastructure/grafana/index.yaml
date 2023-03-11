@@ -15,8 +15,8 @@ spec:
     # auth:
     #   disable_login_form: False
     #   disable_signout_menu: True
-    # auth.anonymous:
-    #   enabled: True
+    auth.anonymous:
+      enabled: True
   service:
     name: "grafana-service"
     labels:
