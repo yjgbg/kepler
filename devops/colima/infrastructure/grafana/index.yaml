@@ -7,7 +7,7 @@ spec:
   gitImplementation: go-git
   interval: 10s
   ref:
-    branch: main
+    branch: master
   timeout: 60s
   url: https://github.com/grafana-operator/grafana-operator.git
 ---
