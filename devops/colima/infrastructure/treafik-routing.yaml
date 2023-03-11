@@ -25,9 +25,8 @@ spec:
   - web
   routes:
   - kind: Rule
-    match: Host(`grafana.yjgbg.me`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+    match: Host(`grafana.yjgbg.me`)
     services:
-    - kind: Service
-      name: grafana
+    - name: grafana
       namespace: monitoring
       port: 3000
