@@ -14,11 +14,11 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: prometheus
+  name: grafana
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/colima/infrastructure/prometheus
+  path: ./devops/colima/infrastructure/grafana
   prune: true
   sourceRef:
     kind: GitRepository

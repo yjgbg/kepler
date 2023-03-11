@@ -1,7 +1,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: GitRepository
 metadata:
-  name: prometheus-operator
+  name: grafana-operator
   namespace: flux-system
 spec:
   gitImplementation: go-git
@@ -9,18 +9,18 @@ spec:
   ref:
     branch: main
   timeout: 60s
-  url: https://github.com/prometheus-operator/kube-prometheus.git
+  url: https://github.com/grafana-operator/grafana-operator.git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: prometheus-operator
+  name: grafana-operator
   namespace: flux-system
 spec:
   force: false
   interval: 10s
-  path: ./manifests
+  path: ./deploy/manifests/latest
   prune: true
   sourceRef:
     kind: GitRepository
-    name: prometheus-operator
+    name: grafana-operator
