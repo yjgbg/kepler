@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/colima/infrastructure/cert-manager.yaml
+  path: ./devops/colima/infrastructure/cert-manager
   prune: true
   sourceRef:
     kind: GitRepository
@@ -18,7 +18,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/colima/infrastructure/prometheus.yaml
+  path: ./devops/colima/infrastructure/prometheus
   prune: true
   sourceRef:
     kind: GitRepository
@@ -31,7 +31,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/colima/infrastructure/traefik-basic.yaml
+  path: ./devops/colima/infrastructure/traefik-basic
   prune: true
   sourceRef:
     kind: GitRepository
@@ -46,7 +46,7 @@ spec:
   dependsOn:
     - name: traefik-basic
   interval: 10s
-  path: ./devops/colima/infrastructure/resources/traefik-routing.yaml
+  path: ./devops/colima/infrastructure/resources/traefik-routing
   prune: true
   sourceRef:
     kind: GitRepository
