@@ -27,7 +27,7 @@ spec:
   - kind: Rule
     match: Host(`grafana.yjgbg.me`)
     services:
-    - name: grafana
-      namespace: monitoring
+    - name: grafana-service
+      namespace: grafana-operator-system
       kind: Service
       port: 3000
