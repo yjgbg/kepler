@@ -19,7 +19,7 @@ metadata:
 spec:
   force: false
   interval: 10s
-  path: ./deploy/manifests/latest
+  path: ./deploy/manifests
   prune: true
   sourceRef:
     kind: GitRepository
