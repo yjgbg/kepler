@@ -1,7 +1,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: cert-manager
+  name: index-cert-manager
   namespace: flux-system
 spec:
   interval: 10s
@@ -14,7 +14,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: grafana-operator
+  name: index-grafana-operator
   namespace: flux-system
 spec:
   interval: 10s
@@ -27,11 +27,11 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: grafana
+  name: index-grafana
   namespace: flux-system
 spec:
   dependsOn:
-    - name: grafana-operator
+    - name: index-grafana-operator
   interval: 10s
   path: ./devops/colima/infrastructure/grafana
   prune: true
@@ -42,7 +42,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: traefik-basic
+  name: index-traefik-basic
   namespace: flux-system
 spec:
   interval: 10s
@@ -55,11 +55,11 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: traefik-routing
+  name: index-traefik-routing
   namespace: flux-system
 spec:
   dependsOn:
-    - name: traefik-basic
+    - name: index-traefik-basic
   interval: 10s
   path: ./devops/colima/infrastructure/traefik-routing
   prune: true
