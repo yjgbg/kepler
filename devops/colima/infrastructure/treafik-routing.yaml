@@ -31,4 +31,4 @@ spec:
       name: grafana
       namespace: monitoring
       port: 3000
-      # schema: http
+      schema: http
