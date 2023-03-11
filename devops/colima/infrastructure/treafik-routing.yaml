@@ -19,7 +19,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: grafana-web
-  namespace: traefik
+  namespace: monitoring
 spec:
   entryPoints:
   - web
