@@ -13,3 +13,22 @@ spec:
     services:
     - kind: TraefikService
       name: api@internal
+---
+# traefik自己的控制界面
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-web
+  namespace: traefik
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host(`grafana.yjgbg.me`)
+    services:
+    - kind: Service
+      name: grafana
+      namespace: monitoring
+      port: 3000
+      # schema: http
