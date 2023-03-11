@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   name: prometheus
-  namespace: operators
+  namespace: monitoring
 spec:
   replicas: 1
   serviceAccountName: prometheus
