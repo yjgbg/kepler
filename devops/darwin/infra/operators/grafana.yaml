@@ -10,7 +10,7 @@ metadata:
   namespace: operator-grafana
 spec:
   targetNamespaces:
-  - monitor
+  - monitoring
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
