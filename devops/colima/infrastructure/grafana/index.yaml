@@ -6,12 +6,12 @@ metadata:
 spec:
   client:
     preferService: true
-  # config:
-    # log:
-    #   mode: "console"
-    #   level: "error"
-    # log.frontend:
-    #   enabled: true
+  config:
+    log:
+      mode: "console"
+      level: "error"
+    log.frontend:
+      enabled: true
     # auth:
     #   disable_login_form: False
     #   disable_signout_menu: True
