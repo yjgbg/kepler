@@ -46,7 +46,7 @@ spec:
   dependsOn:
     - name: traefik-basic
   interval: 10s
-  path: ./devops/colima/infrastructure/traefik-routing.yaml
+  path: ./devops/colima/infrastructure/resources/traefik-routing.yaml
   prune: true
   sourceRef:
     kind: GitRepository
