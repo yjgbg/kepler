@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tidb-system
+---
+apiVersion: pingcap.com/v1alpha1
+kind: TidbCluster
+metadata:
+  name: global
+  namespace: tidb-system
+spec:
+  version: "v6.5.0"
+  timezone: UTC
+  configUpdateStrategy: RollingUpdate
+  helper:
+    image: alpine:3.16.0
+  pvReclaimPolicy: Retain
+  enableDynamicConfiguration: true
+  pd:
+    baseImage: pingcap/pd
+    config: |
+      [dashboard]
+        internal-proxy = true
+    replicas: 3
+    maxFailoverCount: 0
+    requests:
+      storage: 5Gi
+    mountClusterClientSecret: true
+  tidb:
+    baseImage: pingcap/tidb
+    config: |
+      [performance]
+        tcp-keep-alive = true
+    replicas: 3
+    maxFailoverCount: 0
+    service:
+      type: ClusterIP
+      externalTrafficPolicy: Local
+  tikv:
+    baseImage: pingcap/tikv
+    config: |
+      log-level = "info"
+    replicas: 3
+    maxFailoverCount: 0
+    requests:
+      storage: 10Gi
+    mountClusterClientSecret: true
