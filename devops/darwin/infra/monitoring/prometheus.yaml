@@ -4,7 +4,7 @@ metadata:
   name: prometheus
   namespace: monitoring
 spec:
-  replicas: 1
+  replicas: 2
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
@@ -15,11 +15,11 @@ spec:
   podMonitorSelector: 
     matchLabels:
       metrics: prometheus
-  # probeSelector: 
-  #   matchLabels:
-  #     metrics: prometheus
-  # alerting:
-  #   alertmanagers:
-  #     - namespace: monitoring
-  #       name: alertmanager-main
-  #       port: web
+  probeSelector: 
+    matchLabels:
+      metrics: prometheus
+  alerting:
+    alertmanagers:
+      - namespace: monitoring
+        name: alertmanager-main
+        port: web
