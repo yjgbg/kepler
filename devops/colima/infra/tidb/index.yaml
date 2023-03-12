@@ -69,7 +69,7 @@ spec:
     namespace: tidb-system
     name: global
   initSql: |-
-    create database ad-machine;
+    create database ad_machine;
   # initSqlConfigMap: tidb-initsql
   passwordSecret: tidb-secret
   # permitHost: 172.6.5.8
