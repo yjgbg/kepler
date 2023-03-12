@@ -4,24 +4,26 @@ import engine.*
 import biz.Targeting.*
 import biz.Creative
 
-val storageZIO = zio.ZIO.succeed{
+lazy val storageZIO = zio.ZIO.succeed{
   Searchine[Creative,biz.Targeting]
   .load(
-    "IQIYI",1L, // 分区，可被search的次数
+    "IQIYI",
     Network.Network5G, // 定向条件
     Creative(10L,10L,20L,100)) // 数据对象
   .load(
-    "IQIYI",2L,
+    "IQIYI",
     Gender.Male && AgeBetween(18,23) || Gender.Female && AgeBetween(23,30),
     Creative(20L,20L,20L,100))
   .load(
-    "IQIYI",3L,
+    "IQIYI",
     Gender.Male && AgeBetween(18,23),
     Creative(20L,20L,30L,100))
   .load(
-    "IQIYI",4L,
+    "IQIYI",
     DNF.any(OS.IOS.values ++ OS.ANDROID.values).nn,
     Creative(20L,20L,30L,100))
-  .load("BILIBILI-123",4L,AdxCode("BILIBILI"),Creative(100L,100L,100L,100))
+  .load("BILIBILI-123",AdxCode("BILIBILI"),Creative(100L,100L,100L,100))
+  .limit(10){_.orderItemId == 10L}
+  .limit(20){_.orderItemId == 20L}
   .ready
 }

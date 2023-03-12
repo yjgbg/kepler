@@ -29,10 +29,9 @@ object web extends ZIOAppDefault {
         adaptor = adxAdaptor(adxCode)
         (limit,state,id,evaluatorSeq) <- adaptor.evaluator(byteArray)
         searchResult = evaluatorSeq.map(
-          evaluator => storage.search(adxCode+"-"+nid,limit,evaluator)
+          evaluator => storage.search(id,adxCode+"-"+nid,limit,evaluator)
         )
       } yield adaptor.handler(state,searchResult)
-      case req @Method.GET -> !! / "hello" => zio.ZIO.succeed(Response.text("Hello"))
       case req @ Method.GET -> !! / "statistic" => zio.ZIO.succeed(Response
         .text(utils.objectMapper.writeValueAsString(storage.statistic).nn)
         .withContentType("application/json"))
