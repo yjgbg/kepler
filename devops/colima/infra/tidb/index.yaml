@@ -35,7 +35,6 @@ spec:
     maxFailoverCount: 0
     service:
       type: ClusterIP
-      externalTrafficPolicy: Local
   tikv:
     baseImage: pingcap/tikv
     config: |
