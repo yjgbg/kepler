@@ -15,7 +15,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: spark
+      chart: spark-operator
       sourceRef:
         kind: HelmRepository
         name: spark
