@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: tidb-operator
+  namespace: operators
+spec:
+  channel: stable
+  name: tidb-operator
+  source: operatorhubio-catalog
+  sourceNamespace: olm
