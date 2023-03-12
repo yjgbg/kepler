@@ -45,6 +45,17 @@ spec:
       storage: 10Gi
     mountClusterClientSecret: true
 ---
+apiVersion: v1
+data:
+  developer: ZGV2ZWxvcGVy
+  # developer
+  root: cm9vdA==
+  # root
+kind: Secret
+metadata:
+  name: tidb-secret
+  namespace: tidb-system
+type: Opaque
 ---
 apiVersion: pingcap.com/v1alpha1
 kind: TidbInitializer
@@ -60,7 +71,7 @@ spec:
   initSql: |-
     create database ad-machine;
   # initSqlConfigMap: tidb-initsql
-  passwordSecret: root
+  passwordSecret: tidb-secret
   # permitHost: 172.6.5.8
   # resources:
   #   limits:
