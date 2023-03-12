@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10s
-  path: ./devops/darwin/infra/operators
+  path: ./devops/colima/infra/operators
   prune: true
   sourceRef:
     kind: GitRepository
@@ -20,7 +20,7 @@ spec:
   dependsOn:
   - name: operators
   interval: 10s
-  path: ./devops/darwin/infra/monitoring
+  path: ./devops/colima/infra/monitoring
   prune: true
   sourceRef:
     kind: GitRepository
