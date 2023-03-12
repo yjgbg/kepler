@@ -45,3 +45,29 @@ spec:
     requests:
       storage: 10Gi
     mountClusterClientSecret: true
+---
+---
+apiVersion: pingcap.com/v1alpha1
+kind: TidbInitializer
+metadata:
+  name: global-init
+  namespace: tidb-system
+spec:
+  image: tnir/mysqlclient
+  # imagePullPolicy: IfNotPresent
+  cluster:
+    namespace: tidb-system
+    name: global
+  initSql: |-
+    create database ad-machine;
+  # initSqlConfigMap: tidb-initsql
+  passwordSecret: root
+  # permitHost: 172.6.5.8
+  # resources:
+  #   limits:
+  #     cpu: 1000m
+  #     memory: 500Mi
+  #   requests:
+  #     cpu: 100m
+  #     memory: 50Mi
+  timezone: "Asia/Shanghai"
