@@ -5,10 +5,14 @@ import zhttp.service.Server
 import zio.*
 import java.lang.management.ManagementFactory
 
-object web extends ZIOAppDefault {
-  override def run = for {
+object web extends ZIOAppDefault with utils {
+  case class AppConfig(pulsar:PulsarConfig,log:LogConfig)
+  case class PulsarConfig(url:String = "pulsar://localhost:6650,localhost:6651,localhost:6652")
+  case class LogConfig(handler:String)
+  import zio.config.magnolia.{*,given}
+  def run = (for {
     _ <- ZIO.unit
-    _ = scribe.Logger.root.withMinimumLevel(scribe.Level.Debug).replace()
+    appConfig <- ZIO.service[AppConfig] // autowired
     mxBean = ManagementFactory.getRuntimeMXBean().nn
     _ = scribe.info(s"Java VM (${mxBean.getVmName()} ${mxBean.getVmVersion()}) started on ${mxBean.getUptime() / 1000.0} s")
     storage <- storageZIO
@@ -16,9 +20,10 @@ object web extends ZIOAppDefault {
       .provideSomeLayer[Any](
         zhttp.service.EventLoopGroup.auto(0) 
         ++ zhttp.service.server.ServerChannelFactory.auto 
-        ++ Scope.default
-      )
-  } yield endless
+        ++ Scope.default)
+  } yield endless)
+  // @component
+  .provideLayer(config.ZConfig.fromSystemEnv(zio.config.magnolia.descriptor[AppConfig],keyDelimiter = Some('.'),valueDelimiter = Some(',')))
   def app(storage:engine.Searchine[biz.Creative,biz.Targeting,engine.Ready.Yes.type]) =
     Http.collectZIO[Request] {
       case req @ Method.POST -> !! / "bid" => for {

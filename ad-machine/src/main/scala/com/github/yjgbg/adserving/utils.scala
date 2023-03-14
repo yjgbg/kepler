@@ -5,7 +5,7 @@ trait utils:
     def |>[B](f:A => B):B = f(a)
   extension [A](a: A|Null)
     def |>?[B](f: A => B|Null): B|Null = if a == null then null else f(a)
-    def |?(other:A):A = if a == null then other else a
+    def |?(other: => A):A = if a == null then other else a
   val objectMapper = com.fasterxml.jackson.databind.ObjectMapper() 
     |> {_.registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule).nn}
   import biz.Targeting.IdType

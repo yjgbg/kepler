@@ -3,6 +3,7 @@ package com.github.yjgbg.adserving
 import scala.collection.mutable.SortedSet
 import scala.collection.mutable.HashSet
 import com.github.yjgbg.adserving.utils.objectMapper
+import com.github.yjgbg.adserving.web.AppConfig
 
 object engine:
   case class Assignment[+A](flag:Boolean,it:A)
@@ -99,9 +100,17 @@ object engine:
       _limit += (selector -> count)
       this
     def search(using /*erased*/ A =:= Ready.Yes.type)
-    (id:String,zoneKey:String,limit: Int, evaluator: Evaluator[T]):Seq[Item[E]] =
-      hash.get(zoneKey).map{ sz =>
-        val evaluateResult = sz.tVector.map(it => it -> evaluator(it)).toMap
+    (id:String,zoneKey:String,limit: Int, evaluator: Evaluator[T]) = for {
+      appConfig <- zio.ZIO.service[AppConfig]
+      x = hash.get(zoneKey)
+      y = for {
+        sz <- x
+        evaluateResult = sz.tVector.map(it => it -> evaluator(it)).toMap
+        sorted = for {
+          conj if conj.forall{_ => true} <- sz.conjVector
+
+        }
+      } yield {
         val res = sz.conjVector
           .filter{conj => conj.forall{ass => evaluateResult(ass.it) match
             case null => false
@@ -124,4 +133,6 @@ object engine:
           .take(limit)
         scribe.info(objectMapper.writeValueAsString(Record(id,evaluateResult,res)).nn)
         res
-      }.getOrElse(Seq())
+      }
+    } yield x
+      

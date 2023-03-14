@@ -15,7 +15,8 @@ lazy val versionScribe = "3.11.1"
 lazy val versionZio = "2.0.9"
 lazy val versionZhttp = "2.0.0-RC11"
 lazy val versionZhttpTest = "2.0.0-RC9"
-lazy val versionSconfig = "1.5.0"
+lazy val versionZioConfig = "3.0.7"
+lazy val versionPulsarClient = "2.11.0"
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
     name := "protobuf",
@@ -31,7 +32,10 @@ lazy val adMachine = (project in file("./ad-machine"))
     libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % versionJackson,
     libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % versionJackson,
     libraryDependencies += "com.outr" %% "scribe" % versionScribe,
-    libraryDependencies += "org.ekrich" %% "sconfig" % versionSconfig,
+    libraryDependencies += "dev.zio" %% "zio-config" % versionZioConfig,
+    libraryDependencies += "dev.zio" %% "zio-config-magnolia" % versionZioConfig,
+    libraryDependencies += "dev.zio" %% "zio-config-yaml" % versionZioConfig,
+    libraryDependencies += "org.apache.pulsar" % "pulsar-client" % versionPulsarClient,
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-test" % versionZio % Test,
       "dev.zio" %% "zio-test-sbt" % versionZio % Test,
