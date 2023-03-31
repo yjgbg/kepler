@@ -17,6 +17,7 @@ lazy val versionZhttp = "2.0.0-RC11"
 lazy val versionZhttpTest = "2.0.0-RC9"
 lazy val versionZioConfig = "3.0.7"
 lazy val versionPulsarClient = "2.11.0"
+lazy val verisonSourcecode = "0.3.0"
 lazy val protobuf = (project in file("./protobuf"))
   .settings(
     name := "protobuf",
@@ -63,14 +64,15 @@ lazy val keplerJsonDsl = (project in file("./json-dsl"))
     libraryDependencies += "io.circe" %% "circe-generic" % versionCirce,
     libraryDependencies += "io.circe" %% "circe-parser" % versionCirce,
     libraryDependencies += "io.circe" %% "circe-yaml" % versionCirceYaml,
+    libraryDependencies += "com.lihaoyi" %% "sourcecode" % verisonSourcecode,
     scalacOptions += "-source:future", // 为了better-monadic-for
-    scalacOptions += "-Yexplicit-nulls", //  因为protoc编译出的代码不支持explicit null，会导致编译失败，因此注释掉这行
+    scalacOptions += "-Yexplicit-nulls",
     publishMavenStyle := true,
     publishTo := Some {
       if (isSnapshot.value) Opts.resolver.sonatypeSnapshots
       else Opts.resolver.sonatypeStaging
     },
-    versionScheme := Some("early-semver")
+    versionScheme := Some("early-semver"),
   )
 lazy val devops = (project in file("./devops"))
   .dependsOn(keplerJsonDsl)
