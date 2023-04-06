@@ -4,6 +4,7 @@ import zhttp.http.*
 import zhttp.service.Server
 import zio.*
 import java.lang.management.ManagementFactory
+import com.github.yjgbg.adserving.biz.Creative
 
 object web extends ZIOAppDefault with utils {
   case class AppConfig(pulsar:PulsarConfig,log:LogConfig)
@@ -12,7 +13,6 @@ object web extends ZIOAppDefault with utils {
   import zio.config.magnolia.{*,given}
   def run = (for {
     _ <- ZIO.unit
-    appConfig <- ZIO.service[AppConfig] // autowired
     mxBean = ManagementFactory.getRuntimeMXBean().nn
     _ = scribe.info(s"Java VM (${mxBean.getVmName()} ${mxBean.getVmVersion()}) started on ${mxBean.getUptime() / 1000.0} s")
     storage <- storageZIO
@@ -20,7 +20,8 @@ object web extends ZIOAppDefault with utils {
       .provideSomeLayer[Any](
         zhttp.service.EventLoopGroup.auto(0) 
         ++ zhttp.service.server.ServerChannelFactory.auto 
-        ++ Scope.default)
+        ++ Scope.default
+        ++ ZLayer(ZIO.succeed(AppConfig(PulsarConfig(),LogConfig("")))))
   } yield endless)
   // @component
   .provideLayer(config.ZConfig.fromSystemEnv(zio.config.magnolia.descriptor[AppConfig],keyDelimiter = Some('.'),valueDelimiter = Some(',')))
@@ -33,10 +34,11 @@ object web extends ZIOAppDefault with utils {
         _ = scribe.info(s"adxCode:${adxCode},nid:${nid}")
         adaptor = adxAdaptor(adxCode)
         (limit,state,id,evaluatorSeq) <- adaptor.evaluator(byteArray)
-        searchResult = evaluatorSeq.map(
+        searchResult:Seq[ZIO[AppConfig,Nothing,Seq[engine.Item[Creative]]]] = evaluatorSeq.map(
           evaluator => storage.search(id,adxCode+"-"+nid,limit,evaluator)
         )
-      } yield adaptor.handler(state,searchResult)
+        x <- zio.ZIO.collect(searchResult){x => x}
+      } yield adaptor.handler(state,x)
       case req @ Method.GET -> !! / "statistic" => zio.ZIO.succeed(Response
         .text(utils.objectMapper.writeValueAsString(storage.statistic).nn)
         .withContentType("application/json"))

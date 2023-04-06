@@ -4,6 +4,7 @@ import scala.collection.mutable.SortedSet
 import scala.collection.mutable.HashSet
 import com.github.yjgbg.adserving.utils.objectMapper
 import com.github.yjgbg.adserving.web.AppConfig
+import zio.UIO
 
 object engine:
   case class Assignment[+A](flag:Boolean,it:A)
@@ -52,6 +53,12 @@ object engine:
       this.priority.compare(that.priority)
   case class Statistic[E](data:E,times:Long)
   case class Record[T,E](id:String,evaluateResult:Map[T,Boolean|Null],result:Seq[Item[E]])
+  // type Recorder = [T,E] =>> Record[T,E] => zio.IO[Nothing,Unit]
+  trait Recorder[T,E]:
+    def apply(record:Record[T,E]):zio.UIO[Unit]
+  object Recorder:
+    def apply[T,E](f:Record[T,E] => zio.UIO[Unit]) = new Recorder[T,E]:
+      override def apply(record: Record[T, E]): UIO[Unit] = f(record)
   case class SearchingZone[E,T](val key:String):
     private[engine] lazy val store:mutable.HashMap[Conjunction[T],mutable.Buffer[Item[E]]] = mutable.HashMap()
     private[engine] lazy val conjVector:Vector[Conjunction[T]] = store.keySet.to(Vector)
@@ -100,27 +107,24 @@ object engine:
       _limit += (selector -> count)
       this
     def search(using /*erased*/ A =:= Ready.Yes.type)
-    (id:String,zoneKey:String,limit: Int, evaluator: Evaluator[T]) = for {
-      appConfig <- zio.ZIO.service[AppConfig]
+    (id:String,zoneKey:String,limit: Int, evaluator: Evaluator[T])
+    :zio.ZIO[Recorder[T,E],Nothing,Seq[Item[E]]] = for {
+      recorder <- zio.ZIO.succeed("").fork
+      q <- recorder.join
       x = hash.get(zoneKey)
       y = for {
         sz <- x
         evaluateResult = sz.tVector.map(it => it -> evaluator(it)).toMap
-        sorted = for {
-          conj if conj.forall{_ => true} <- sz.conjVector
-
-        }
-      } yield {
-        val res = sz.conjVector
-          .filter{conj => conj.forall{ass => evaluateResult(ass.it) match
-            case null => false
-            case b:Boolean => !ass.flag ^ b
-          }}
-          .flatMap{sz.store.getOrElse(_,Seq())}
-          .sorted
-          .to(LazyList)
-          // 筛选出尚未达到投放限制的
-          .filter{item => this.limit.forall{(k,v) => 
+        vector = for {
+          conj  <- sz.conjVector if conj.forall{ass => 
+            evaluateResult(ass.it) match
+              case null => false
+              case b:Boolean => !ass.flag ^ b
+          }
+          y <- sz.store.getOrElse(conj,Seq())
+        } yield y
+        ll = for {
+          item <- vector.sorted.to(LazyList) if this.limit.forall{(k,v) => 
             val res = if (!k.contains(item.data)) true 
             else if (v <= 0) false
             else {this.limit.updateWith(k)(_.map(_ - 1));true}
@@ -129,10 +133,11 @@ object engine:
               case Some(value) => Some(value + 1)
             }
             res
-          }}
-          .take(limit)
-        scribe.info(objectMapper.writeValueAsString(Record(id,evaluateResult,res)).nn)
-        res
-      }
-    } yield x
+          }
+        } yield item
+        xx = ll.take(limit)
+        _ = recorder(Record(id,evaluateResult,xx)) // 不等待这儿的操作完成，而直接结束
+      } yield xx
+      z = y getOrElse Seq()
+    } yield z
       

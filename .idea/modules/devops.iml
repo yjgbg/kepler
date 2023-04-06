@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id="devops [file:/Users/weicl/Desktop/kepler/]" external.linked.project.path="$MODULE_DIR$/../../devops" external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
+    <output url="file://$MODULE_DIR$/../../devops/target/scala-3.2.2/classes" />
+    <output-test url="file://$MODULE_DIR$/../../devops/target/scala-3.2.2/test-classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../devops">
+      <sourceFolder url="file://$MODULE_DIR$/../../devops/src/main/scala" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../devops/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="kepler.kepler-json-dsl" exported="" />
+    <orderEntry type="library" name="sbt: com.lihaoyi:sourcecode_3:0.3.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-core_3:0.14.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-generic_3:0.14.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-jawn_3:0.14.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-numbers_3:0.14.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-parser_3:0.14.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.circe:circe-yaml_3:0.14.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.10:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala3-library_3:3.2.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.typelevel:cats-core_3:2.9.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.typelevel:cats-kernel_3:2.9.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.typelevel:jawn-parser_3:1.4.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.yaml:snakeyaml:1.33:jar" level="project" />
+    <orderEntry type="module-library">
+      <library name="sbt: unmanaged-sources-and-docs">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/io/netty/incubator/netty-incubator-transport-native-io_uring/0.0.14.Final/netty-incubator-transport-native-io_uring-0.0.14.Final-sources.jar!/" />
+          <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/apache/pulsar/bouncy-castle-bc/2.11.0/bouncy-castle-bc-2.11.0-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+  </component>
+</module>

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="sbt: com.outr:perfolation_3:1.2.9:jar" external-system-id="SBT">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/outr/perfolation_3/1.2.9/perfolation_3-1.2.9.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/outr/perfolation_3/1.2.9/perfolation_3-1.2.9-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

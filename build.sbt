@@ -55,7 +55,7 @@ lazy val adMachine = (project in file("./ad-machine"))
     assemblyJarName := "app.jar",
     outputStrategy := Some(StdoutOutput) // sbt中打日志的配置
   )
-lazy val keplerJsonDsl = (project in file("./json-dsl"))
+lazy val keplerJsonDsl = (project in file("./kepler-json-dsl"))
   .settings(
     name := "kepler-json-dsl",
     version := "1.0.0-SNAPSHOT",
