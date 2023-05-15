@@ -2,6 +2,7 @@ package com.github.yjgbg.compose
 
 import scala.collection.mutable.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.Future
 class Rx[A] private[compose](
   private[compose] var value0:A,
   private[compose] var listener: WeakHashMap[Any,(A,A) => Unit]
@@ -28,6 +29,14 @@ object Rx:
     def map[B](closure:A => B):Rx[B] = {
       val (read,write) = useState(closure(rx.value))
       addListener({(_,newValue) => write(closure(newValue))},read)
+      read
+    }
+    def mapMonad[M[_]:cats.Functor,B](unit:B,closure:A => M[B]):Rx[B] = {
+      val (read,write) = useState(unit)
+      addListener{(_,newValue) => 
+        val m = closure(newValue)
+        cats.Functor[M].map(m){b => write(b)}
+      }
       read
     }
     def zip[B](rxb:Rx[B]):Rx[(A,B)] = {
