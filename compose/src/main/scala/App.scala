@@ -1,20 +1,23 @@
 import com.github.yjgbg.compose.Rx.*
 import com.github.yjgbg.compose.DocumentDsl.{*,given}
 import com.github.yjgbg.compose.DocumentDsl
+import com.github.yjgbg.compose.DocumentDsl.Layout.Style.DefaultWidth
+import com.github.yjgbg.compose.DocumentDsl.Layout.Style.DefaultHeight
+import com.github.yjgbg.compose.DocumentDsl.Layout.Verb.OnExit
 
 val (state,setState) = Rx.useState(false)
 val (help,setHelp) = Rx.useState(false)
 val (seq,setSeq) = Rx.useState(Seq(1,2,3))
-val (title,setTitle) = Rx.useState("search")
-val app = RxObj[Application] {
-  Name := state.map(_.toString())
+@main def main = Application(Name := state.map(_.toString())) {
   For(seq) {i =>
     Dialog(Name := i.toString()){}
   }
-  Window(Name := title) {
+  val title = Rx.usePeriod(1000,0,_+1)
+  Window(Id := "test",Name := title.map(_.toString()),DefaultWidth := 300,DefaultHeight := 300) {
     Menu(Path := Seq("123")) {
       Action := { () => }
     }
+    OnExit := {() => println("exit")}
     Menu() {
       Path := Seq("帮助","发行说明")
       Action := {() => setHelp(true)}
@@ -40,10 +43,10 @@ val app = RxObj[Application] {
     }
   }
 }
-@main def main = {
-  println(app.value.json)
-  app.addListener{(oldApp,newApp) => println(newApp.json)}
-  setSeq(Seq(2))
-  setHelp(true)
-  setHelp(false)
-}
+// @main def main = {
+//   println(app.value.json)
+//   app.addListener{(oldApp,newApp) => println(newApp.json)}
+//   setSeq(Seq(2))
+//   setHelp(true)
+//   setHelp(false)
+// }
