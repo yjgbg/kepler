@@ -79,7 +79,7 @@ lazy val devops = (project in file("./devops"))
   .settings(
     name := "devops"
   )
-val lwjglVersion = "3.3.2-SNAPSHOT"
+val lwjglVersion = "3.3.2"
 // val lwjglNatives = "natives-macos-arm64"
 val lwjglNatives = "natives-windows"
 lazy val `compose` = (project in file("./compose"))
@@ -103,4 +103,27 @@ lazy val `compose` = (project in file("./compose"))
     libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier lwjglNatives,
     libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion classifier lwjglNatives,
     // libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion % Runtime classifier lwjglNatives,
+  )
+
+lazy val emulator = (project in file("./emulator"))
+  .settings(
+    name := "emulator",
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    // javaOptions in run := Seq("-XstartOnFirstThread"),
+    fork in run := true, // 在新的进程中运行main函数
+    libraryDependencies += "org.typelevel" %% "cats-core" % "2.9.0",
+    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion,
+    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion % Runtime classifier lwjglNatives,
   )

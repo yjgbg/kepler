@@ -1,24 +1,25 @@
 package com.github.yjgbg.compose
 
-import scala.collection.mutable.WeakHashMap
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.Future
-import java.util.ArrayList
+import scala.ref.WeakReference
+import java.util.concurrent.CopyOnWriteArrayList
+import java.{util => ju}
+import com.github.yjgbg.compose.Rx.WeakEntry
 class Rx[A] private[compose](
   private[compose] var value0:A,
-  private[compose] var listener: WeakHashMap[Any,(A,A) => Unit],
-  private[compose] var strongRef:java.util.List[Any] = new ArrayList()
+  private[compose] var listener: CopyOnWriteArrayList[WeakEntry[Any,(A,A) => Unit]]
   )
 object Rx:
+  case class WeakEntry[A,B](key:A,value:B) extends java.lang.ref.WeakReference[A](key)
   val Rx = this
   class Cancelable(val cancel : () => Unit)
-  extension [A](self:A) def rx:Rx[A] = Rx(self,WeakHashMap())
+  extension [A](self:A) def rx:Rx[A] = Rx(self,CopyOnWriteArrayList())
   def useState[A](default:A):(Rx[A],A => Unit) = 
     val x = default.rx
     (x,{a =>
       val old = x.value0
       x.value0 = a
-      if old != a then x.listener.foreach{f => f._2(old,a)}
+      if old != a then x.listener.forEach{weak => if  weak.get() != null then weak.value(old,a)}
     })
 
   def usePeriod[A](time:Long,initial:A,closure:A => A):Rx[A] = {
@@ -33,13 +34,11 @@ object Rx:
   }
   extension [A](rx:Rx[A]) 
     def value = rx.value0
-    def addListener(closure:(A,A) => Unit,key:Any = null):Cancelable =
-      rx.listener.put(if key == null then {
-        val ref = new Object
-        rx.strongRef.add(ref)
-        ref
-      } else key,closure)
-      Cancelable{() => rx.listener.remove(key) }
+    def addListener(closure:(A,A) => Unit,key:Any):Cancelable =
+      val weakEntry = WeakEntry(key,closure)
+      rx.listener.add(weakEntry)
+      rx.listener.removeIf{_.get()==null}
+      Cancelable{() => rx.listener.remove(weakEntry)}
     def map[B](closure:A => B):Rx[B] =
       val (read,write) = useState(closure(rx.value))
       addListener({(_,newValue) => write(closure(newValue))},read)
@@ -66,9 +65,9 @@ object Rx:
     val (read,write) = useState(self.value.value)
     val current = AtomicReference[Cancelable]
     current.set(if self.value==null then null else self.value.addListener({(oldA,newA) => write(newA)},read))
-    self.addListener{(old,n) => 
+    self.addListener({(old,n) => 
       write(n.value)
       if(current.get()!=null) current.get().cancel()
       current.set(n.addListener({(oldA,newA) => write(newA)},read))
-    }
+    },read)
     read
