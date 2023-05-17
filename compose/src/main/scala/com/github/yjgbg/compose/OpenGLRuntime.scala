@@ -1,6 +1,6 @@
 package com.github.yjgbg.compose
 
-case object OpenGLDriver extends Document.Driver:
+case object OpenGLRuntime extends Document.Runtime:
   override def apply(application: Rx[Document.Application]): Unit = 
     val (init,render) = initAndRender
     val (state,setState) = Rx.useState(init(application.value))
@@ -10,7 +10,7 @@ case object OpenGLDriver extends Document.Driver:
     import org.lwjgl
     import org.lwjgl.glfw
     val winSeq = state.value
-    while (!winSeq.isEmpty) for ((_, winId) <- winSeq if !glfw.GLFW.glfwWindowShouldClose(winId) )
+    while (!winSeq.isEmpty) for ((_, winId) <- winSeq if !glfw.GLFW.glfwWindowShouldClose(winId))
       // 在当前线程创建啥来着
       lwjgl.opengl.GL.createCapabilities()
       // RGBA 设置空的颜色
@@ -64,8 +64,6 @@ case object OpenGLDriver extends Document.Driver:
         if (current(Title) != next(Title)) then glfw.GLFW.glfwSetWindowTitle(openglId.get,next(Title))
         openglId
       case Modify.CREATE(value) =>
-        //int width, int height, @NativeType("char const *") ByteBuffer title, 
-        // @NativeType("GLFWmonitor *") long monitor, @NativeType("GLFWwindow *") long share
         // 创建窗口
         val winId = glfw.GLFW.glfwCreateWindow(
           value(DefaultWidth),
@@ -95,6 +93,6 @@ case object OpenGLDriver extends Document.Driver:
         // 将openGL的上下文设置到这个窗口开始绘制
         glfw.GLFW.glfwMakeContextCurrent(winId)
         // 开启 v-sync
-        glfw.GLFW.glfwSwapInterval(1)
+        // glfw.GLFW.glfwSwapInterval(1)
         glfw.GLFW.glfwShowWindow(winId)
         Some(winId)

@@ -1,7 +1,5 @@
 package com.github.yjgbg.compose
 
-import java.nio.ByteBuffer
-
 trait Document extends Dsl:
   // 定义节点
   opaque type Application = collection.immutable.HashMap[Any,Any]
@@ -16,6 +14,7 @@ trait Document extends Dsl:
   given Node[Div] = Node[Div]
   // 定义属性
   val Id = Key.Single[Window,String]("Id")
+  val AutoActive = Key.Single[Window,Boolean]("AutoActive")
   val Title = Key.Single[Application|Window|Dialog|Menu,String]("Name")
   val Window = Key.Multi[Application,Window]("Window")
   val Dialog = Key.Multi[Application,Dialog]("Dialog")
@@ -51,6 +50,7 @@ trait Document extends Dsl:
       val OnHover = Key.Single[Div,() => Unit]("OnHover")
 
 object Document extends Document:
-  trait Driver extends (Rx[Document.Application] => Unit):
+  trait Runtime extends (Rx[Document.Application] => Unit):
     def Application(closure0:Scope[Application] ?=> Unit)(closure1:Scope[Application] ?=> Unit) =
       apply(RxObj[Application](closure0,closure1)(using given_Node_Application))
+  val OpenGL = OpenGLRuntime
