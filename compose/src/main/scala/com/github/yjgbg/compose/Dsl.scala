@@ -4,27 +4,28 @@ import scala.annotation.unchecked.uncheckedVariance
 import java.util.concurrent.atomic.AtomicReference
 import com.github.yjgbg.compose.Rx
 trait Dsl:
-  trait Node[A](using A =:= collection.immutable.HashMap[Any,Any]):
+  trait Node[A]:
     def empty:A
-    def combine(a0:A,a1:A):A
-    private def json0(any:Any):String = any match
-      case seq:Seq[_] => seq.map{json0(_)}.mkString("[",",","]")
-      case map:collection.immutable.HashMap[?,?] => map.map{(k,v) => json0(k) +":" + json0(v)}.mkString("{",",","}")
-      case string:String => "\""+string+"\""
-      case bool:Boolean => bool.toString()
-      case num:Number => num.toString()
-      case null => "null"
-      case key:Key.Single[?,?] => "\""+key.name+"\""
-      case key:Key.Multi[?,?] => "\""+key.name+"\""
-      case _ => "\""+any.getClass()+"\""
     extension (that:A)
-      def json:String = json0(that)
-      def apply[B](key:Key[_ >: A,B]):B = that.asInstanceOf[collection.immutable.HashMap[Any,Any]].getOrElse(key,null).asInstanceOf
-      def apply[B](key:Key[_ >: A,B],value:B):A = (that + (key.asInstanceOf[Any] -> value.asInstanceOf[Any])).asInstanceOf
+      def json:String
+      def apply[B](key:Key[_ >: A,B]):B
+      def apply[B](key:Key[_ >: A,B],value:B):A
   object Node:
     def apply[A](using A =:= collection.immutable.HashMap[Any,Any]):Node[A] = new Node[A]:
       override def empty:A = collection.immutable.HashMap[Any,Any]().asInstanceOf[A]
-      override def combine(a0:A,a1:A):A = (a0 ++ a1).asInstanceOf
+      extension (that: A) override def apply[B](key: Key[? >: A, B]): B = that.getOrElse(key,null).asInstanceOf
+      extension (that: A) override def apply[B](key: Key[? >: A, B], value: B): A = (that + (key -> value).asInstanceOf[(Any,Any)]).asInstanceOf
+      extension (that: A) override def json: String = json0(that)
+      private def json0(any:Any):String = any match
+        case seq:Seq[_] => seq.map{json0(_)}.mkString("[",",","]")
+        case map:collection.immutable.HashMap[?,?] => map.map{(k,v) => json0(k) +":" + json0(v)}.mkString("{",",","}")
+        case string:String => "\""+string+"\""
+        case bool:Boolean => bool.toString()
+        case num:Number => num.toString()
+        case null => "null"
+        case key:Key.Single[?,?] => "\""+key.name+"\""
+        case key:Key.Multi[?,?] => "\""+key.name+"\""
+        case _ => "\""+any.getClass()+"\""
   type Elem[A] = A match
     case Seq[a] => a
     case _ => A
