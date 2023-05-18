@@ -3,6 +3,7 @@ package com.github.yjgbg.compose
 import scala.annotation.unchecked.uncheckedVariance
 import java.util.concurrent.atomic.AtomicReference
 import com.github.yjgbg.compose.Rx
+import java.{util => ju}
 trait Dsl:
   trait Node[A]:
     def empty:A
@@ -13,9 +14,10 @@ trait Dsl:
   object Node:
     def apply[A](using A =:= collection.immutable.HashMap[Any,Any]):Node[A] = new Node[A]:
       override def empty:A = collection.immutable.HashMap[Any,Any]().asInstanceOf[A]
-      extension (that: A) override def apply[B](key: Key[? >: A, B]): B = that.getOrElse(key,null).asInstanceOf
-      extension (that: A) override def apply[B](key: Key[? >: A, B], value: B): A = (that + (key -> value).asInstanceOf[(Any,Any)]).asInstanceOf
-      extension (that: A) override def json: String = json0(that)
+      extension (that: A) 
+        override def apply[B](key: Key[? >: A, B]): B = that.get(key).getOrElse(null).asInstanceOf
+        override def apply[B](key: Key[? >: A, B], value: B): A = (that + (key -> value).asInstanceOf[(Any,Any)]).asInstanceOf
+        override def json: String = json0(that)
       private def json0(any:Any):String = any match
         case seq:Seq[_] => seq.map{json0(_)}.mkString("[",",","]")
         case map:collection.immutable.HashMap[?,?] => map.map{(k,v) => json0(k) +":" + json0(v)}.mkString("{",",","}")
@@ -105,7 +107,7 @@ trait Dsl:
             fun(rxa).zip(rxb).map{(a,b) => a(single,b)}
           case multi:Key.Multi[C,B] @unchecked => rxa => 
             fun(rxa).zip(rxb).map{(a,b) =>
-              val seq = a(multi)
+              val seq = if a(multi)!=null then a(multi) else Seq()
               if seq == null then a(multi,Seq(b)) else a(multi,seq :+ b)
             }
           case _ => throw new IllegalAccessError()

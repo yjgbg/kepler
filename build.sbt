@@ -83,6 +83,7 @@ val lwjglVersion = "3.3.2"
 // val lwjglNatives = "natives-macos-arm64"
 val lwjglNatives = "natives-windows"
 lazy val `compose` = (project in file("./compose"))
+  .enablePlugins(JavaAppPackaging)
   .settings(
     name := "compose",
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
@@ -102,6 +103,7 @@ lazy val `compose` = (project in file("./compose"))
     libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion classifier lwjglNatives,
     libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier lwjglNatives,
     libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion classifier lwjglNatives,
+    libraryDependencies += "io.github.humbleui" % "skija-windows" % "0.109.0",
     // libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion % Runtime classifier lwjglNatives,
   )
 

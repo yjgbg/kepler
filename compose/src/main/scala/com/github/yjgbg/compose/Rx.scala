@@ -16,11 +16,11 @@ object Rx:
   extension [A](self:A) def rx:Rx[A] = Rx(self,CopyOnWriteArrayList())
   def useState[A](default:A):(Rx[A],A => Unit) = 
     val x = default.rx
-    (x,{a =>
+    (x,{a =>if x.value0 != a then {
       val old = x.value0
       x.value0 = a
-      if old != a then x.listener.forEach{weak => if  weak.get() != null then weak.value(old,a)}
-    })
+      x.listener.forEach{entry => if  entry.get() != null then entry.value(old,a)}
+    }})
 
   def usePeriod[A](time:Long,initial:A,closure:A => A):Rx[A] = {
     val (state,setState) = useState(initial)

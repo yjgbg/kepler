@@ -9,18 +9,25 @@ import com.github.yjgbg.compose.Document.Layout.Oriential
 import com.github.yjgbg.compose.Document.Layout.Div
 import com.github.yjgbg.compose.Document.Layout.Style.Width
 import com.github.yjgbg.compose.Document.Layout.Style.Height
+import com.github.yjgbg.compose.Document.Layout.Verb.OnInit
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 val (state,setState) = Rx.useState(false)
 val (help,setHelp) = Rx.useState(false)
 val (seq,setSeq) = Rx.useState(Seq(1,2,3))
 @main def main = OpenGL.Application(Title := state.map(_.toString())) {
-  val title = Rx.usePeriod(1000,0,_+1)
-  If(title.map(_ < 10)) {
-    Window(Id := "test", Title := title.map(_.toString()), DefaultWidth := 800, DefaultHeight := 800) {
+  val (counter,setCounter) = useState(0)
+  counter.addListener({(_,next) => if next == 0 then System.exit(0)},counter)
+  val title = Rx.usePeriod(1000,LocalDateTime.now(),{_ => LocalDateTime.now()})
+  If(true.rx) {
+    Window(Id := "test", DefaultWidth := 800, DefaultHeight := 800) {
+      Title := title.map(_.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
       Menu(Path := Seq("123")) {
         Action := { () => }
       }
-      OnExit := {() => println("exit")}
+      OnInit := {() => setCounter(counter.value+1)}
+      OnExit := {() => setCounter(counter.value-1)}
       Menu() {
         Path := Seq("帮助","发行说明")
         Action := {() => setHelp(true)}
