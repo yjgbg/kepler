@@ -1,5 +1,7 @@
 package com.github.yjgbg.compose
 
+import java.awt.event.KeyAdapter
+
 trait Document extends Dsl:
   // 定义节点
   opaque type Application = collection.immutable.HashMap[Any,Any]
@@ -12,6 +14,8 @@ trait Document extends Dsl:
   given Node[Menu] = Node[Menu]
   opaque type Div = collection.immutable.HashMap[Any,Any]
   given Node[Div] = Node[Div]
+  opaque type KeyAction = collection.immutable.HashMap[Any,Any]
+  given Node[KeyAction] = Node[KeyAction]
   // 定义属性
   val Id = Key.Single[Window,String]("Id")
   val AutoActive = Key.Single[Window,Boolean]("AutoActive")
@@ -23,6 +27,11 @@ trait Document extends Dsl:
   val ShortKey = Key.Multi[Menu,Int]("ShortKey")
   val Action = Key.Single[Menu,() => Unit]("Action")
   val Scheduled = Key.Multi[Application,() => Unit]("Scheduled")
+  val OnKeyPress = Key.Multi[Window,KeyAction]("OnKeyPress")
+  val OnKeyRelease = Key.Multi[Window,KeyAction]("OnKeyRelease")
+  val OnKeyDoubleClick = Key.Multi[Window,KeyAction]("OnKeyDoubleClick")
+  val KeyCode = Key.Single[KeyAction,Int]("KeyCode")
+  val Callback = Key.Single[KeyAction,() => Unit]("Callback")
   object Layout:
     val Div = Key.Multi[Div|Window|Dialog,Div]("Div")
     val Oriential = Key.Single[Window|Div,"V"|"H"]("Oriential")
@@ -41,7 +50,7 @@ trait Document extends Dsl:
       // 单击，点击
       val OnPress = Key.Single[Div,() => Unit]("OnPress")
       // 单击，松开
-      val OnRelease = Key.Single[Div,() => Unit]("OnRelease")
+      val OnRelease = Key.Single[Window,() => Unit]("OnRelease")
       // 双击
       val OnDoubleClick = Key.Single[Div,() => Unit]("OnDoubleClick")
       // 长按或鼠标右键
@@ -54,3 +63,4 @@ object Document extends Document:
     def Application(closure0:Scope[Application] ?=> Unit)(closure1:Scope[Application] ?=> Unit) =
       apply(RxObj[Application](closure0,closure1)(using given_Node_Application))
   val OpenGL = OpenGLRuntime
+  val Metal = MetalRuntime

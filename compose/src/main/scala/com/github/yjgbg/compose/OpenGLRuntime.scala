@@ -4,24 +4,26 @@ case object OpenGLRuntime extends Document.Runtime:
   override def apply(application: Rx[Document.Application]): Unit = 
     val (init,render) = initAndRender
     val (state,setState) = Rx.useState(init(application.value))
+    state.addListener({(current,next) => println(s"state changed from :${current} to ${next}")},state)
     setState(render(state.value,null.asInstanceOf,application.value))
     application.addListener({(current,next) => setState(render(state.value,current,next))},state)
     loop(state)
+    println("finished")
   private def loop(state:Rx[Map[String,Long]]) = 
     import org.lwjgl
     import org.lwjgl.glfw
     val winSeq = state.value
-    var i = 0
-    while (!winSeq.isEmpty) for ((_, winId) <- winSeq if !glfw.GLFW.glfwWindowShouldClose(winId))
-      // 在当前线程创建啥来着
-      lwjgl.opengl.GL.createCapabilities()
-      // RGBA 设置空的颜色
-      lwjgl.opengl.GL11.glClearColor(1,0,0,0)
-      lwjgl.opengl.GL11.glClear(lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT | lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT) // clear framebuffer
-      glfw.GLFW.glfwSwapBuffers(winId)
-      i += 1
-      if i % 60 == 0 then println(i)
-      glfw.GLFW.glfwPollEvents()
+    while (!winSeq.isEmpty) for ((_, winId) <- winSeq)
+      if glfw.GLFW.glfwWindowShouldClose(winId) then 
+        glfw.GLFW.glfwDestroyWindow(winId)
+      else 
+        // 在当前线程创建啥来着
+        lwjgl.opengl.GL.createCapabilities()
+        // RGBA 设置空的颜色
+        lwjgl.opengl.GL11.glClearColor(1,0,0,0)
+        lwjgl.opengl.GL11.glClear(lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT | lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT) // clear framebuffer
+        glfw.GLFW.glfwSwapBuffers(winId)
+        glfw.GLFW.glfwPollEvents()
   enum Modify[A]:
     case UPDATE[A](current:A,next:A) extends Modify[A]
     case CREATE[A](value:A) extends Modify[A]
@@ -50,7 +52,7 @@ case object OpenGLRuntime extends Document.Runtime:
         modify.map{(action,option) => action match
           case Modify.DELETE(value) =>
             glfw.GLFW.glfwSetWindowShouldClose(option.get,true)
-            value(Id) -> None
+            value(Id) -> option
           case Modify.UPDATE(current, next) => 
             if (current(Title) != next(Title)) then glfw.GLFW.glfwSetWindowTitle(option.get,next(Title))
             next(Id) -> option
@@ -68,17 +70,15 @@ case object OpenGLRuntime extends Document.Runtime:
             value(OnInit)()
             // 配置回调函数
             glfw.GLFW.glfwSetWindowCloseCallback(winId,{(_) =>
-              if (value(OnExit)!= null)value(OnExit)()
-              glfw.GLFW.glfwDestroyWindow(winId)
+              if (value(OnExit)!= null) value(OnExit)()
+              // glfw.GLFW.glfwDestroyWindow(winId)
             })
             //long window, int key, int scancode, int action, int mods
             // 松开esc键的时候关闭窗口
+            val map = if value(OnKeyRelease)!=null then value(OnKeyRelease).map{it => it(KeyCode) -> it(Callback)}.toMap else Map()
             glfw.GLFW.glfwSetKeyCallback(winId,{(_,keyId,scancode,action,mods) => 
-              if keyId == glfw.GLFW.GLFW_KEY_ESCAPE && action == glfw.GLFW.GLFW_RELEASE then {
-                glfw.GLFW.glfwSetWindowShouldClose(winId,true)
-                if (value(OnExit)!= null)value(OnExit)()
-                glfw.GLFW.glfwDestroyWindow(option.get)
-              }
+              println(s"key clicked:winId=${winId},keyId=${keyId},action=${action},mods=${mods}")
+              if action == glfw.GLFW.GLFW_RELEASE then map.get(keyId).foreach{_()}
             })
             // 设置窗口位置为根据宽高算出的屏幕中央(假定宽高不大于屏幕尺寸)
             val primaryMonitor = glfw.GLFW.glfwGetPrimaryMonitor()
@@ -87,7 +87,7 @@ case object OpenGLRuntime extends Document.Runtime:
             // 将openGL的上下文设置到这个窗口开始绘制
             glfw.GLFW.glfwMakeContextCurrent(winId)
             // 开启 v-sync
-            glfw.GLFW.glfwSwapInterval(1)
+            glfw.GLFW.glfwSwapInterval(0)
             glfw.GLFW.glfwShowWindow(winId)
             value(Id) -> Some(winId)
          }.filter{(k,v) => v.isDefined}.map{(k,v) => k -> v.get}.toMap

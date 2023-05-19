@@ -12,20 +12,24 @@ import com.github.yjgbg.compose.Document.Layout.Style.Height
 import com.github.yjgbg.compose.Document.Layout.Verb.OnInit
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.github.yjgbg.compose.Document.Layout.Verb.OnRelease
 
 val (state,setState) = Rx.useState(false)
 val (help,setHelp) = Rx.useState(false)
 val (seq,setSeq) = Rx.useState(Seq(1,2,3))
 @main def main = OpenGL.Application(Title := state.map(_.toString())) {
   val (counter,setCounter) = useState(0)
-  counter.addListener({(_,next) => if next == 0 then System.exit(0)},counter)
-  val title = Rx.usePeriod(1000,LocalDateTime.now(),{_ => LocalDateTime.now()})
-  If(true.rx) {
+  counter.addListener({(current,next) => println(s"counter changes from $current to $next")},counter)
+  // counter.addListener({(_,next) => if next == 0 then System.exit(0)},counter)
+  val (bool,setBool) = Rx.useState(true)
+  If(bool) {
     Window(Id := "test", DefaultWidth := 800, DefaultHeight := 800) {
-      Title := title.map(_.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+      Title := Rx.usePeriod(1000,LocalDateTime.now(),{_ => LocalDateTime.now()})
+        .map(_.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH:mm:ss")))
       Menu(Path := Seq("123")) {
         Action := { () => }
       }
+      OnKeyRelease(KeyCode := 256,Callback := {() =>setBool(!bool.value)}){}
       OnInit := {() => setCounter(counter.value+1)}
       OnExit := {() => setCounter(counter.value-1)}
       Menu() {
