@@ -9,8 +9,8 @@ trait Dsl:
     def empty:A
     extension (that:A)
       def json:String
-      def apply[B](key:Key[_ >: A,B]):B
-      def apply[B](key:Key[_ >: A,B],value:B):A
+      def apply[B](key:Key[? >: A,B]):B
+      def apply[B](key:Key[? >: A,B],value:B):A
   object Node:
     def apply[A](using A =:= collection.immutable.HashMap[Any,Any]):Node[A] = new Node[A]:
       override def empty:A = collection.immutable.HashMap[Any,Any]().asInstanceOf[A]
@@ -35,9 +35,7 @@ trait Dsl:
   object Key:
     case class Single[A,B](name:String) extends Key[A,B]
     case class Multi[A,B](name:String) extends Key[A,Seq[B]]
-    inline def apply[A,B](name:String) = inline compiletime.erasedValue[B] match
-      case _:Seq[a] => Key.Multi[A,Elem[B]](name):Key.Multi[A,Elem[B]]
-      case _ => Key.Single[A,B](name):Key.Single[A,B]
+    case class NamedMulti[A,B](name:String) extends Key[A,Map[String,B]]
   opaque type Scope[A] = AtomicReference[Rx[A] => Rx[A]]
   object Scope:
     def apply[A]:Scope[A] = AtomicReference{x => x}
@@ -75,7 +73,7 @@ trait Dsl:
       }.map(f => f(f0(x))).flatten
     }
   }
-  def RxObj[A:Node](closure:Scope[A] ?=> Unit):Rx[A] = {
+  def RxObject[A:Node](closure:Scope[A] ?=> Unit):Rx[A] = {
     val x:Scope[A] = AtomicReference(it => it)
     closure(using x)
     val unitA = summon[Node[A]].empty
@@ -92,7 +90,18 @@ trait Dsl:
       case b:B @unchecked => summon[Scope[C]].updateAndGet{fun => rxa =>
         fun(rxa).map{a => a(key,b)}
       }
-  extension [A,B:Node](key:Key.Single[A,B]|Key.Multi[A,B]) 
+  extension [A,B](key:Key.Multi[A,B]) def +=[C <: A : Node]
+    (using Scope[C])(value:Rx[B]|B):Unit = value match
+      // 此处的警告是因为不能用case检查出B的具体类型，但是没关系
+      case rxb:Rx[B] @unchecked => summon[Scope[C]].updateAndGet{fun => rxa =>
+        fun(rxa).zip(rxb).map{(a,b) => a(key,if a(key)!=null then (a(key) :+ b) else Seq(b))}
+      }
+      case b:B @unchecked => summon[Scope[C]].updateAndGet{fun => rxa =>
+        fun(rxa).map{a => a.apply(key,if a(key)!=null then (a(key) :+ b) else Seq(b))}
+      }
+  case class NamedMultiBinding[A,B](namedMulti:Key.NamedMulti[A,B],name:String)
+  extension [A,B](key:Key.NamedMulti[A,B]) def apply(name:String) = NamedMultiBinding(key,name)
+  extension [A,B:Node](key:Key.Single[A,B]|Key.Multi[A,B]|NamedMultiBinding[A,B]) 
     def apply[C <: A : Node](using Scope[C])
     (closure0:Scope[B] ?=> Unit = {(ignored:Scope[B]) ?=> })
     (closure1:Scope[B] ?=> Unit):Unit = 
@@ -107,8 +116,11 @@ trait Dsl:
             fun(rxa).zip(rxb).map{(a,b) => a(single,b)}
           case multi:Key.Multi[C,B] @unchecked => rxa => 
             fun(rxa).zip(rxb).map{(a,b) =>
-              val seq = if a(multi)!=null then a(multi) else Seq()
-              if seq == null then a(multi,Seq(b)) else a(multi,seq :+ b)
+              a(multi,if a(multi)!=null then (a(multi) :+ b) else Seq(b))
+            }
+          case NamedMultiBinding[C,B](k,name) => rxa => 
+            fun(rxa).zip(rxb).map{(a,b) => 
+              a(k,if a(k) != null then a(k) + (name -> b) else Map(name -> b))
             }
           case _ => throw new IllegalAccessError()
       }

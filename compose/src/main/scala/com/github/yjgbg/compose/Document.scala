@@ -20,7 +20,7 @@ trait Document extends Dsl:
   val Id = Key.Single[Window,String]("Id")
   val AutoActive = Key.Single[Window,Boolean]("AutoActive")
   val Title = Key.Single[Application|Window|Dialog|Menu,String]("Name")
-  val Window = Key.Multi[Application,Window]("Window")
+  val Window = Key.NamedMulti[Application,Window]("Window")
   val Dialog = Key.Multi[Application,Dialog]("Dialog")
   val Menu = Key.Multi[Window,Menu]("Menu")
   val Path = Key.Multi[Menu,String]("Path")
@@ -61,6 +61,6 @@ trait Document extends Dsl:
 object Document extends Document:
   trait Runtime extends (Rx[Document.Application] => Unit):
     def Application(closure0:Scope[Application] ?=> Unit)(closure1:Scope[Application] ?=> Unit) =
-      apply(RxObj[Application](closure0,closure1)(using given_Node_Application))
+      apply(RxObject[Application](closure0,closure1)(using given_Node_Application))
   val OpenGL = OpenGLRuntime
   val Metal = MetalRuntime
