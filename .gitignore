@@ -5,3 +5,4 @@ target
 project/project
 docs/.docusaurus
 docs/node_modules
+docs/build
