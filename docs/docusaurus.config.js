@@ -29,8 +29,8 @@ const config = {
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: 'zh-Hans',
+    locales: ['zh-Hans','en'],
   },
 
   presets: [
@@ -42,15 +42,13 @@ const config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/yjgbg/kepler/tree/main/docs/',
+          editUrl: 'https://github.com/yjgbg/kepler/tree/main/docs/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/yjgbg/kepler/tree/main/docs/',
+          editUrl: 'https://github.com/yjgbg/kepler/tree/main/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
