@@ -2,6 +2,7 @@
 // 后续版本升级之后，如果不再出现这个问题，可以考虑删掉这行
 ThisBuild / PB.protocVersion := "3.22.0"
 ThisBuild / scalaVersion := "3.2.2"
+ThisBuild / scalacOptions += "-Yexplicit-nulls" //  因为protoc编译出的代码不支持explicit null，会导致编译失败，因此注释掉这行
 ThisBuild / credentials += Credentials(
   "Sonatype Nexus Repository Manager",
   "oss.sonatype.org",

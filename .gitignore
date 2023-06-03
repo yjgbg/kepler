@@ -3,3 +3,5 @@
 .metals
 target
 project/project
+docs/.docusaurus
+docs/node_modules
