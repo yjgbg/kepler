@@ -1,1 +1,3 @@
-# JsonDsl 是基于scala实现的用于生成json或yaml的dsl
+# CoreDsl
+
+核心模块
