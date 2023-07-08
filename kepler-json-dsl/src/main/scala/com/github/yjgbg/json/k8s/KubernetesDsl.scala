@@ -11,7 +11,7 @@ trait KubernetesDsl extends JsonDsl:
   given jobV:Version["Job"] = "v1"
   given pvcV:Version["PersistentVolumeClaim"] = "V1"
   given cmV:Version["ConfigMap"] = "v1"
-
+  opaque type ResourceProvince[A] = Null
   class Resource(val name:String,val json:Scope ?=> Unit)
   class NamespaceScope(private[KubernetesDsl] val context:ContextScope,val name:String,var resourceSeq:Seq[Resource])
   class ContextScope(val name:String,var namespaces:Seq[NamespaceScope])
@@ -41,7 +41,7 @@ trait KubernetesDsl extends JsonDsl:
     summon[ContextScope].namespaces = summon[ContextScope].namespaces :+ x
   opaque type >>[A,B[_]] = B[A]
   opaque type DeploymentScope = Scope
-  def deployment(using NamespaceScope,Version["Deployment"])(name:String)(closure: DeploymentScope ?=> Unit):Unit = 
+  def deployment(using NamespaceScope,Version["Deployment"])(name:String)(closure: (DeploymentScope,ResourceProvince[DeploymentScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-deployment",{
       "kind" := "Deployment"
       "apiVersion" := summon[Version["Deployment"]]
@@ -49,10 +49,11 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[DeploymentScope] = null
       closure.apply
     })
   opaque type ServiceScope = Scope
-  def service(using NamespaceScope,Version["Service"])(name:String)(closure:ServiceScope ?=> Unit):Unit = 
+  def service(using NamespaceScope,Version["Service"])(name:String)(closure:(ServiceScope,ResourceProvince[ServiceScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-service",{
       "kind" := "Service"
       "apiVersion" := summon[Version["Service"]]
@@ -60,9 +61,9 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[ServiceScope] = null
       closure.apply
     })
-  import scala.compiletime.ops.int.>=
   def tcpNodePort(using NamespaceScope,Version["Service"])(nodePort:Int,targetPort:Int,selector:(String,String)*) = 
     service("nodeport-"+nodePort):
       spec:
@@ -74,7 +75,7 @@ trait KubernetesDsl extends JsonDsl:
           "port" := targetPort.toLong
           "nodePort" := nodePort.toLong
         }
-  def udpNodePort(using NamespaceScope,Version["Service"])(nodePort:Int,targetPort:Int,selector:(String,String)*)(using nodePort.type >= 0 =:= true,targetPort.type >= 0 =:= true) = 
+  def udpNodePort(using NamespaceScope,Version["Service"])(nodePort:Int,targetPort:Int,selector:(String,String)*) = 
     service("nodeport-"+nodePort):
       spec:
         "type" := "NodePort"
@@ -85,7 +86,7 @@ trait KubernetesDsl extends JsonDsl:
           "port" := targetPort.toLong
           "nodePort" := nodePort.toLong
         }
-  def sctpNodePort(using NamespaceScope,Version["Service"])(nodePort:Int,targetPort:Int,selector:(String,String)*)(using nodePort.type >= 0 =:= true,targetPort.type >= 0 =:= true) = 
+  def sctpNodePort(using NamespaceScope,Version["Service"])(nodePort:Int,targetPort:Int,selector:(String,String)*) = 
     service("nodeport-"+nodePort):
       spec:
         "type" := "NodePort"
@@ -97,7 +98,7 @@ trait KubernetesDsl extends JsonDsl:
           "nodePort" := nodePort.toLong
         }
   opaque type PodScope = Scope
-  def pod(using NamespaceScope,Version["Pod"])(name:String)(closure:PodScope ?=> Unit):Unit = 
+  def pod(using NamespaceScope,Version["Pod"])(name:String)(closure:(PodScope,ResourceProvince[PodScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-pod",{
       "kind" := "Pod"
       "apiVersion" := summon[Version["Pod"]]
@@ -105,10 +106,11 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[PodScope] = null
       closure.apply
     })
   opaque type JobScope = Scope
-  def job(using NamespaceScope,Version["Job"])(name:String)(closure:JobScope ?=> Unit):Unit = 
+  def job(using NamespaceScope,Version["Job"])(name:String)(closure:(JobScope,ResourceProvince[JobScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-job",{
       "kind" := "Job"
       "apiVersion" := summon[Version["Job"]]
@@ -116,13 +118,14 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[JobScope] = null
       closure.apply
     })
-  def backoffLimit(using JobScope >> SpecScope)(int:Int)(using int.type >= 0 =:= true):Unit = {
+  def backoffLimit(using JobScope >> SpecScope)(int:Int):Unit = {
     "backoffLimit" := int.toLong
   }
   opaque type CronJobScope = Scope
-  def cronJob(using NamespaceScope,Version["CronJob"])(name:String)(closure:CronJobScope ?=> Unit):Unit = 
+  def cronJob(using NamespaceScope,Version["CronJob"])(name:String)(closure:(CronJobScope,ResourceProvince[CronJobScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-cron-job",{
       "kind" := "CronJob"
       "apiVersion" := summon[Version["CronJob"]]
@@ -130,10 +133,14 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[CronJobScope] = null
       closure.apply
     })
   opaque type PersistentVolumeClaimScope = Scope
-  def persistentVolumeClaim(using NamespaceScope,Version["PersistentVolumeClaim"])(name:String)(closure:PersistentVolumeClaimScope ?=> Unit) =
+  def persistentVolumeClaim
+  (using NamespaceScope,Version["PersistentVolumeClaim"])
+  (name:String)
+  (closure:(PersistentVolumeClaimScope,ResourceProvince[PersistentVolumeClaimScope]) ?=> Unit) =
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-persistent-volume-claim",{
       "kind" := "PersistentVolumeClaim"
       "apiVersion" := summon[Version["PersistentVolumeClaim"]]
@@ -141,11 +148,15 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[PersistentVolumeClaimScope] = null
       closure.apply
     })
   def schedule(using CronJobScope >> SpecScope)(cron:String):Unit = "schedule" := cron
   opaque type ConfigMapScope = Scope
-  def configMap(using NamespaceScope,Version["ConfigMap"])(name:String)(closure:ConfigMapScope ?=> Unit):Unit = 
+  def configMap
+  (using NamespaceScope,Version["ConfigMap"])
+  (name:String)
+  (closure:(ConfigMapScope,ResourceProvince[ConfigMapScope]) ?=> Unit):Unit = 
     summon[NamespaceScope].resourceSeq = summon[NamespaceScope].resourceSeq :+ Resource(s"$name-config-map",{
       "kind" := "ConfigMap"
       "apiVersion" := summon[Version["ConfigMap"]]
@@ -153,18 +164,19 @@ trait KubernetesDsl extends JsonDsl:
         "namespace" := summon[NamespaceScope].name
         "name" := name
       }
+      given ResourceProvince[ConfigMapScope] = null
       closure.apply
     })
   def data(using ConfigMapScope)(values: (String,String)*) : Unit = "data" ::= {
     values.foreach((k,v) => k := v)
   }
-  def labels(using DeploymentScope|ServiceScope|PodScope|JobScope|CronJobScope|ConfigMapScope|PersistentVolumeClaimScope)
-    (values:(String,String)*) = values.foreach{(k,v) => "metadata" ::= {"labels" ::= {k := v}}}
-  def annotations(using DeploymentScope|ServiceScope|PodScope|JobScope|CronJobScope|ConfigMapScope|PersistentVolumeClaimScope)
-    (values:(String,String)*) = values.foreach{(k,v) => "metadata" ::= {"annotations" ::= {k := v}}}
+  def labels[A](using ResourceProvince[A])(using A)
+    (values:(String,String)*) = values.foreach{(k,v) => "metadata".::=(using summon[A].asInstanceOf){"labels" ::= {k := v}}}
+  def annotations[A](using ResourceProvince[A])(using A)
+    (values:(String,String)*) = values.foreach{(k,v) => "metadata".::=(using summon[A].asInstanceOf){"annotations" ::= {k := v}}}
   opaque type SpecScope[A] = Scope
-  def spec[A <: DeploymentScope|ServiceScope|PodScope|JobScope|CronJobScope|ConfigMapScope|PersistentVolumeClaimScope]
-  (using A)(closure: A >> SpecScope ?=> Unit) = "spec" ::= closure
+  def spec[A](using ResourceProvince[A])(using A)(closure: A >> SpecScope ?=> Unit) = 
+    "spec".::=(using summon[A].asInstanceOf)(closure)
   def storageClassName(using PersistentVolumeClaimScope >> SpecScope)(name:String) = 
     "storageClassName" := name
   def accessModes(using PersistentVolumeClaimScope >> SpecScope)
@@ -195,18 +207,19 @@ trait KubernetesDsl extends JsonDsl:
           case Expression.DoesNotExist(key) => "key" := key;"operator" := "DoesNotExist"
       }
     })
-  def replicas(using DeploymentScope >> SpecScope)(int:Int)(using int.type >= 0 =:= true) = "replicas" := int.toLong
+  def replicas(using DeploymentScope >> SpecScope)(int:Int) = "replicas" := int.toLong
   type TemplateScope[A] = A match 
     case JobScope >> SpecScope => PodScope
     case DeploymentScope >> SpecScope => PodScope
     case CronJobScope >> SpecScope => JobScope
   def template[A <: (DeploymentScope >> SpecScope) | (JobScope >> SpecScope)]
-  (using A)(closure: TemplateScope[A] ?=> Unit):Unit =
+  (using A)(closure: (TemplateScope[A],ResourceProvince[TemplateScope[A]]) ?=> Unit):Unit =
+    given ResourceProvince[TemplateScope[A]] = null
     "template" ::= closure
   def suspend(using CronJobScope >> SpecScope)(boolean:Boolean = true) = "suspend" := boolean
   def jobTemplate(using CronJobScope >> SpecScope)(closure :JobScope ?=> Unit)= "jobTemplate" ::= closure
-  def failedJobsHistoryLimit(using CronJobScope >> SpecScope)(int:Int)(using int.type >= 0 =:= true) = "failedJobsHistoryLimit" := int.toLong
-  def successfulJobsHistoryLimit(using CronJobScope >> SpecScope)(int:Int)(using int.type >= 0 =:= true) = "successfulJobsHistoryLimit" := int.toLong
+  def failedJobsHistoryLimit(using CronJobScope >> SpecScope)(int:Int) = "failedJobsHistoryLimit" := int.toLong
+  def successfulJobsHistoryLimit(using CronJobScope >> SpecScope)(int:Int) = "successfulJobsHistoryLimit" := int.toLong
   def nodeSelector(using PodScope >> SpecScope)(labels:(String,String)*) =
     labels.toMap.foreach{ (k,v) =>"nodeSelector" ::= { k := v}}
   def restartPolicy(using PodScope >> SpecScope)(policy:"Always"|"OnFailure"|"Never"):Unit = 

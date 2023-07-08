@@ -5,9 +5,9 @@ object Sample:
     import k8s.KubernetesEnhanceDel.*
     context("bbb"):
       namespace("default"):
-        pod("xxx"):
-          spec:
-            proxy("mysql", 3306){}
+        // pod("xxx"):
+        //   spec:
+        //     proxy("mysql", 3306){}
         deployment("gateway"):
           labels("app" -> "gateway")
           spec:
