@@ -4,7 +4,7 @@ object JsonDsl extends JsonDsl
 
 trait JsonDsl:
 
-  import io.circe.{*, given}
+  import io.circe.*
 
   def plus(json0: Json, json1: Json): Json =
     if (json1.isNumber || json1.isBoolean || json1.isString) {

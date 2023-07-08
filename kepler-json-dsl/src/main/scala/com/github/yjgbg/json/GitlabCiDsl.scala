@@ -1,6 +1,5 @@
 package com.github.yjgbg.json
 
-import scala.concurrent.duration.Duration
 import scala.annotation.implicitNotFound
 
 object GitlabCiDsl extends GitlabCiDsl

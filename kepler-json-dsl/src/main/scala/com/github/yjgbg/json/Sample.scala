@@ -1,58 +1,27 @@
 package com.github.yjgbg.json
 
-object Sample {
-  @main def main = {
-    import KubernetesDsl.*
-    context("aaa") {
-      namespace("default") {
-        pod("xxx") {
-          spec {
+object Sample:
+  @main def main =
+    import k8s.KubernetesEnhanceDel.*
+    context("bbb"):
+      namespace("default"):
+        pod("xxx"):
+          spec:
             proxy("mysql", 3306){}
-          }
-        }
-        simplePVC("xxx")
-        deployment("gateway") {
+        deployment("gateway"):
           labels("app" -> "gateway")
-          spec {
+          spec:
             selectorMatchLabels("app" -> "gateway")
-            template {
+            template:
               labels("app" -> "gateway")
-              spec {
-                volumeCustom("www") {
+              spec:
+                volumeCustom("www"):
                   fileImagePath("www","reg2.hypers.cc/has-frontend:latest","/usr/share/nginx/www","echo 'hello'")
-                  // fileLiteralText("nginx.conf","""
-                  //   |server {
-                  //   |  listen 80;
-                  //   |  location / {
-                  //   |    
-                  //   |  }
-                  //   |}
-                  //   |""".stripMargin.nn.stripLeading().nn.stripTrailing().nn)
-                  // fileLiteralText("0.script.sh", "echo 'hello' > /hello.txt")
-                }
-                container("app", "nginx:alpine") {
+                container("app", "nginx:alpine"):
                   volumeMounts("www" -> "/usr/share/nginx/www")
                   env("k0" -> "v0")
-                }
-                // rabbitmqTopo("username","password","localhost",init = true) {
-                //   for (x <- Array("/has","/has-saas","/has-test")) vHost(x) {
-                //     exchange("aaa")
-                //     queue("queue0")
-                //     binding("aaa","direct","queue0")
-                //   }
-                // }
-              }
-            }
-          }
-        }
         tcpNodePort(8080,8080,"" -> "")
-        service("gateway") {
-          spec {
+        service("gateway"):
+          spec:
             selector("app" -> "gateway")
             tcpPorts(80 -> 80)
-          }
-        }
-      }
-    }
-  }
-}
