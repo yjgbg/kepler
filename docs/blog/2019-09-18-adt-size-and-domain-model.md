@@ -1,3 +1,10 @@
+---
+slug: adt-size-and-domain-model
+title: 代数数据类型的Size和域模型
+authors: yjgbg
+tags: [adt, functional programing]
+---
+
 ## 代数数据类型的Size和域模型
 
 [原文地址:https://fsharpforfunandprofit.com/posts/type-size-and-design/](https://fsharpforfunandprofit.com/posts/type-size-and-design/)
