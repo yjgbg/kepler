@@ -1,8 +1,9 @@
 // 默认版本过低，会导致在m1 mac上找不到对应的protoc的包。
 // 后续版本升级之后，如果不再出现这个问题，可以考虑删掉这行
 ThisBuild / PB.protocVersion := "3.22.0"
-ThisBuild / scalaVersion := "3.2.2"
+ThisBuild / scalaVersion := "3.3.0"
 ThisBuild / scalacOptions += "-Yexplicit-nulls" //  因为protoc编译出的代码不支持explicit null，会导致编译失败，因此注释掉这行
+ThisBuild / scalacOptions += "-Wunused:all"
 ThisBuild / credentials += Credentials(
   "Sonatype Nexus Repository Manager",
   "oss.sonatype.org",
@@ -26,10 +27,10 @@ lazy val protobuf = (project in file("./protobuf"))
       scalapb.gen() -> (Compile / sourceManaged).value / "protobuf"
     )
   )
-lazy val adMachine = (project in file("./ad-machine"))
+lazy val web = (project in file("./web"))
   .dependsOn(protobuf)
   .settings(
-    name := "core",
+    name := "ad-machine",
     libraryDependencies += "io.d11" %% "zhttp" % versionZhttp,
     libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % versionJackson,
     libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % versionJackson,
@@ -79,54 +80,4 @@ lazy val devops = (project in file("./devops"))
   .dependsOn(keplerJsonDsl)
   .settings(
     name := "devops"
-  )
-val lwjglVersion = "3.3.2"
-// val lwjglNatives = "natives-macos-arm64"
-val lwjglNatives = "natives-windows"
-lazy val `compose` = (project in file("./compose"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(
-    name := "compose",
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-    // javaOptions in run := Seq("-XstartOnFirstThread"),
-    fork in run := true, // 在新的进程中运行main函数
-    libraryDependencies += "org.typelevel" %% "cats-core" % "2.9.0",
-    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion,
-    // libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "io.github.humbleui" % "skija-windows" % "0.109.0",
-    // libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion % Runtime classifier lwjglNatives,
-  )
-
-lazy val emulator = (project in file("./emulator"))
-  .settings(
-    name := "emulator",
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-    // javaOptions in run := Seq("-XstartOnFirstThread"),
-    fork in run := true, // 在新的进程中运行main函数
-    libraryDependencies += "org.typelevel" %% "cats-core" % "2.9.0",
-    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion,
-    libraryDependencies += "org.lwjgl" % "lwjgl" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-assimp" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-glfw" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-openal" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-opengl" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-stb" % lwjglVersion classifier lwjglNatives,
-    libraryDependencies += "org.lwjgl" % "lwjgl-vulkan" % lwjglVersion % Runtime classifier lwjglNatives,
   )
