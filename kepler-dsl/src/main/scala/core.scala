@@ -1,5 +1,7 @@
 package com.github.yjgbg.kepler.dsl
 
+import scala.collection.Iterable
+
 object core:
   enum Scope(private[core] val value:collection.mutable.HashMap[String,Any]):
     case Root(private[core] override val value:collection.mutable.HashMap[String,Any]) extends Scope(value)
@@ -39,7 +41,7 @@ object core:
         case None => summon[S].value.put(key,collection.mutable.Buffer(value))
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] += value
 
-    def ++=(using MultiValueKey[K,S,V],S)(value:Seq[V]):Unit =
+    def ++=(using MultiValueKey[K,S,V],S)(value:Iterable[V]):Unit =
       summon[S].value.get(key) match
         case None => summon[S].value.put(key,value.toBuffer)
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] ++= value

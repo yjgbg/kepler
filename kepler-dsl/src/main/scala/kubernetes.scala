@@ -35,7 +35,7 @@ object SampleTest:
     context("aaa","apply"):
       Namespace(name := "bbb"):
         Deployment(name := "ccc"):
-          labels ++= Seq(
+          labels ++= Map(
             "aa" -> "bb"
           )
           labels += "1" -> "2"
