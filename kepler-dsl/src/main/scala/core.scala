@@ -8,6 +8,14 @@ object core:
     case >>[+A <: Scope,+B](private[core] override val value:collection.mutable.HashMap[String,Any]) extends Scope(value)
   export Scope.*
   extension [S <:Scope](a:S) 
+    def toHashMap:collection.immutable.HashMap[String,Any] = a.value.view.mapValues(_.asInstanceOf[Matchable]).mapValues{
+      case x:Scope => x.toHashMap
+      case iterable:Iterable[?] => iterable.map(_.asInstanceOf[Matchable]).map{
+        case x:Scope => x.toHashMap
+        case other => other
+      }
+      case other => other
+    }.to(collection.immutable.HashMap)
     def getNode[Key <: String & Singleton,V](key:Key)(using NodeKey[Key,S,V]):Seq[S >> V] = 
       a.value.get(key) match
         case None => Nil
@@ -32,10 +40,11 @@ object core:
     val root:Scope.Root = Scope.Root(collection.mutable.HashMap.empty)
     closure(using root)
     root
-  def x[A]():A ?=> Unit = {}
   extension [S <: Scope, K <: Singleton & String, V](key: K)
     def :=(using SingleValueKey[K,S,V],S)(value:V):Unit = 
       summon[S].value.put(key,value)
+    def :=(using MultiValueKey[K,S,V],S)(value:Iterable[V]):Unit =
+      summon[S].value.put(key,value.toBuffer)
     def +=(using MultiValueKey[K,S,V],S)(value:V):Unit = 
       summon[S].value.get(key) match
         case None => summon[S].value.put(key,collection.mutable.Buffer(value))
