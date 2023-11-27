@@ -197,11 +197,13 @@ object SampleTest:
   @main def main: Unit = 
     import kubernetes.{*,given}
     context("orbstack"):
-      Namespace(name := "default"):
-        PersistentVolumeClaim(name := "123"):
-          spec(storageClassName := "storageClassName"):
-            accessModes += "ReadWriteOnce"
-        ConfigMap(name := ""):
+      Namespace:
+        name := "default"
+        PersistentVolumeClaim:
+          name := "123"
+          spec(storageClassName := "storageClassName",accessModes += "ReadWriteOnce")
+        ConfigMap:
+          name := ""
           data := Map(
              "application.yml" -> raw"""
                |spring:
@@ -209,33 +211,44 @@ object SampleTest:
                |    url: qwejqwiehkwehdqwliejo
                |""".stripMargin.stripTrailing().nn.stripLeading().nn
           )
-        Pod(name := "123"):
-          spec({}):
+        Pod:
+          name := "123"
+          labels += "1" -> "2"
+          spec:
             println()
-        CronJob(name := "123"):
-          spec(suspend := false):
+            containers(name := "",image := "")
+        CronJob:
+          name := "123"
+          spec:
+            suspend := false
             failedJobsHistoryLimit := 3
             successfulJobsHistoryLimit := 4
-            jobTemplate({}):
-              spec(backoffLimit := 3):
-                template(labels += "app" -> "123"):
-                  println()
-        Job(name := "123"):
-          spec(backoffLimit := 3):
-            println()
-        Deployment(name := "nginx"):
-          spec(selector += "app" -> "nginx"):
-            template(labels += "app" -> "nginx"):
-              spec(restartPolicy := "Never"):
+            jobTemplate:
+              spec:
+                backoffLimit := 3
+                template:
+                  labels += "app" -> "123"
+        Job:
+          name := "123"
+          spec(backoffLimit := 3)
+        Deployment:
+          name := "nginx"
+          spec:
+            selector += "app" -> "nginx"
+            template:
+              labels += "app" -> "nginx"
+              spec:
+                restartPolicy := "Never"
                 hostAliases += Seq("www.baidu.com") -> "192.168.50.1"
                 volumeEmptyDir += "volumeName0"
                 volumeConfigMap += "volumeName1" -> "config-map-name"
                 volumePVC += "volumeName2" -> "pvc-name"
-                initContainers({}):
-                  livenessProbe(initialDelaySeconds := 3):
+                initContainers:
+                  livenessProbe(
+                    initialDelaySeconds := 3,
                     action := Action.Exec("curl -x 'localhost:8080/api/healthy'")
-                    action := Action.HttpGet("/api/healthy",8080)
+                    )
                   env += "spring.profiles.active" -> "prod"
                   ports += 80
-                containers({}):
+                containers:
                   println()

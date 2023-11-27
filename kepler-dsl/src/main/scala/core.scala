@@ -1,7 +1,5 @@
 package com.github.yjgbg.kepler.dsl
 
-import scala.collection.Iterable
-
 object core:
   given [A](using a: A): Left[A, Nothing] = Left(a)
   given [A](using a: A): Right[Nothing, A] = Right(a)
@@ -17,7 +15,7 @@ object core:
       .mapValues(_.asInstanceOf[Matchable])
       .mapValues {
         case x: Scope => x.toHashMap
-        case iterable: Iterable[?] =>
+        case iterable: scala.collection.Iterable[?] =>
           iterable.map(_.asInstanceOf[Matchable]).map {
             case x: Scope => x.toHashMap
             case other    => other
@@ -66,22 +64,19 @@ object core:
   extension [S <: Scope, K <: Singleton & String, V](key: K)
     def :=(using SingleValueKey[K, S, V], S)(value: V): Unit =
       summon[S].value.put(key, value)
-    def ::=(using MultiValueKey[K, S, V], S)(value: Iterable[V]): Unit =
+    def ::=(using MultiValueKey[K, S, V], S)(value: scala.collection.Iterable[V]): Unit =
       summon[S].value.put(key, value.toBuffer)
     def +=(using MultiValueKey[K, S, V], S)(value: V): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, collection.mutable.Buffer(value))
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] += value
-    def ++=(using MultiValueKey[K, S, V], S)(value: Iterable[V]): Unit =
+    def ++=(using MultiValueKey[K, S, V], S)(value: scala.collection.Iterable[V]): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, value.toBuffer)
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] ++= value
-    def apply(using either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]], s: S)(closure0: S >> V ?=> Unit)(
-        closure1: S >> V ?=> Unit
-    ): Unit =
+    def apply(using either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]], s: S)(closure: S >> V ?=> Unit): Unit =
       val x: S >> V = Scope.>>[S, V](collection.mutable.HashMap.empty)
-      closure0(using x)
-      closure1(using x)
+      closure(using x)
       either match
         case Left(value) => s.value.put(key, x)
         case Right(value) =>
