@@ -144,7 +144,8 @@ object kubernetes:
     val x = obj(closure)
     println(x.toHashMap)
 object SampleTest:
-  @main def main: Unit = 
+  // @main 
+  def main: Unit = 
     import kubernetes.{*,given}
     context("orbstack"):
       Namespace:

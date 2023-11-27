@@ -62,24 +62,24 @@ object core:
     closure(using root)
     root
   extension [S <: Scope, K <: Singleton & String, V](key: K)
-    def :=(using SingleValueKey[K, S, V], S)(value: V): Unit =
+    def :=(using S,SingleValueKey[K, S, V])(value: V): Unit =
       summon[S].value.put(key, value)
-    def ::=(using MultiValueKey[K, S, V], S)(value: scala.collection.Iterable[V]): Unit =
+    def ::=(using S,MultiValueKey[K, S, V])(value: scala.collection.Iterable[V]): Unit =
       summon[S].value.put(key, value.toBuffer)
-    def +=(using MultiValueKey[K, S, V], S)(value: V): Unit =
+    def +=(using S,MultiValueKey[K, S, V])(value: V): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, collection.mutable.Buffer(value))
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] += value
-    def ++=(using MultiValueKey[K, S, V], S)(value: scala.collection.Iterable[V]): Unit =
+    def ++=(using S,MultiValueKey[K, S, V])(value: scala.collection.Iterable[V]): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, value.toBuffer)
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] ++= value
-    def apply(using either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]], s: S)(closure: S >> V ?=> Unit): Unit =
+    def apply(using s:S,either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]])(closure: S >> V ?=> Unit): Unit =
       val x: S >> V = Scope.>>[S, V](collection.mutable.HashMap.empty)
       closure(using x)
       either match
         case Left(value) => s.value.put(key, x)
         case Right(value) =>
           s.value.get(key) match
-            case None        => x.value.put(key, collection.mutable.Buffer(x))
+            case None        => s.value.put(key, collection.mutable.Buffer(x))
             case Some(value) => value.asInstanceOf[collection.mutable.Buffer[Any]] += x
