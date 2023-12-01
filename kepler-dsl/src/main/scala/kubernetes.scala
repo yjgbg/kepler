@@ -2,7 +2,6 @@ package com.github.yjgbg.kepler.dsl
 
 object kubernetes:
   export core.*
-  // 声明Scope和Key字面量
   val Namespace:"Namespace" = compiletime.constValue
   given MultiNodeKey[Namespace.type,Scope.Root,Namespace.type] = Key.multiNodeKey
   val Deployment:"Deployment" = compiletime.constValue

@@ -61,11 +61,14 @@ object core:
     val root: Scope.Root = Scope.Root(collection.mutable.HashMap.empty)
     closure(using root)
     root
+  type Ele = [VK] =>> VK match
+    case Left[SingleValueKey[?,?,v],?] => v
+    case Right[?,MultiValueKey[?,?,v]] => collection.Iterable[v]
   extension [S <: Scope, K <: Singleton & String, V](key: K)
-    def :=(using S,SingleValueKey[K, S, V])(value: V): Unit =
-      summon[S].value.put(key, value)
-    def ::=(using S,MultiValueKey[K, S, V])(value: scala.collection.Iterable[V]): Unit =
-      summon[S].value.put(key, value.toBuffer)
+    def :=[E <: Either[SingleValueKey[K,S,V],MultiValueKey[K,S,V]]](using S,E)(value:Ele[E]) =
+      summon[E] match
+        case Left(_) => summon[S].value.put(key,value)
+        case Right(_) => summon[S].value.put(key,value.asInstanceOf[Ele[Right[?,?]]].toBuffer)
     def +=(using S,MultiValueKey[K, S, V])(value: V): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, collection.mutable.Buffer(value))
