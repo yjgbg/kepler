@@ -15,7 +15,7 @@ object core:
       .mapValues(_.asInstanceOf[Matchable])
       .mapValues {
         case x: Scope => x.toHashMap
-        case iterable: scala.collection.Iterable[?] =>
+        case iterable: collection.Iterable[?] =>
           iterable.map(_.asInstanceOf[Matchable]).map {
             case x: Scope => x.toHashMap
             case other    => other
@@ -73,7 +73,7 @@ object core:
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, collection.mutable.Buffer(value))
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] += value
-    def ++=(using S,MultiValueKey[K, S, V])(value: scala.collection.Iterable[V]): Unit =
+    def ++=(using S,MultiValueKey[K, S, V])(value: collection.Iterable[V]): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, value.toBuffer)
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] ++= value
