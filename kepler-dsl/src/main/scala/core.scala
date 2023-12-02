@@ -1,15 +1,41 @@
 package com.github.yjgbg.kepler.dsl
 
 object core:
-  given [A](using a: A): Left[A, Nothing] = Left(a)
-  given [A](using a: A): Right[Nothing, A] = Right(a)
-  given [A](using a: A): Some[A] = Some(a)
+  given [A](using A):Left[A,Nothing] = Left(summon)
+  given [A](using A):Right[Nothing,A] = Right(summon)
+  sealed trait QEither[+A,+B,+C,+D]
+  case class LL[A](a:A) extends QEither[A,Nothing,Nothing,Nothing]
+  case class LR[A](a:A) extends QEither[Nothing,A,Nothing,Nothing]
+  case class RL[A](a:A) extends QEither[Nothing,Nothing,A,Nothing]
+  case class RR[A](a:A) extends QEither[Nothing,Nothing,Nothing,A]
+  given [A](using A):LL[A] = LL(summon)
+  given [A](using A):LR[A] = LR(summon)
+  given [A](using A):RL[A] = RL(summon)
+  given [A](using A):RR[A] = RR(summon)
   enum Scope(private[core] val value: collection.mutable.HashMap[String, Any]):
     case Root(private[core] override val value: collection.mutable.HashMap[String, Any]) extends Scope(value)
     case >>[+A <: Scope, +B](
         private[core] override val value: collection.mutable.HashMap[String, Any]
     ) extends Scope(value)
+  opaque type SingleValueKey[K, S <: Scope, V] = K
+  opaque type MultiValueKey[K, S <: Scope, V] = K
+  opaque type SingleNodeKey[K, S <: Scope, V] = K
+  opaque type MultiNodeKey[K, S <: Scope, V] = K
+  object Key:
+    inline def singleValueKey[K <: String & Singleton, S <: Scope, V]: SingleValueKey[K, S, V] =
+      compiletime.constValue[K].asInstanceOf
+    inline def multiValueKey[K <: String & Singleton, S <: Scope, V]: MultiValueKey[K, S, V] =
+      compiletime.constValue[K].asInstanceOf
+    inline def singleNodeKey[K <: String & Singleton, S <: Scope, V]: SingleNodeKey[K, S, V] =
+      compiletime.constValue[K].asInstanceOf
+    inline def multiNodeKey[K <: String & Singleton, S <: Scope, V]: MultiNodeKey[K, S, V] =
+      compiletime.constValue[K].asInstanceOf
   export Scope.*
+  type GetResult[A,K,S,V] = A match
+    case LL[?] => Option[S >> V]
+    case LR[?] => Seq[S >> V]
+    case RL[?] => Option[V]
+    case RR[?] => Seq[V]
   extension [S <: Scope](a: S)
     def toHashMap: collection.immutable.HashMap[String, Any] = a.value.view
       .mapValues(_.asInstanceOf[Matchable])
@@ -23,52 +49,31 @@ object core:
         case other => other
       }
       .to(collection.immutable.HashMap)
-    def getSingleNode[Key <: String & Singleton, V](key: Key)(using
-        SingleNodeKey[Key, S, V]
-    ): Option[S >> V] =
-      a.value.get(key).asInstanceOf
-    def getMultiNode[Key <: String & Singleton, V](key: Key)(using
-        MultiNodeKey[Key, S, V]
-    ): Seq[S >> V] =
-      a.value.get(key) match
-        case None        => Nil
-        case Some(value) => value.asInstanceOf[collection.mutable.Buffer[S >> V]].toSeq
-    def getSingleValue[Key <: String & Singleton, V](key: Key)(using
-        SingleValueKey[Key, S, V]
-    ): Option[V] =
-      a.value.get(key).asInstanceOf
-    def getMultiValue[Key <: String & Singleton, V](key: Key)(using
-        MultiValueKey[Key, S, V]
-    ): Seq[V] =
-      a.value.get(key) match
-        case None        => Nil
-        case Some(value) => value.asInstanceOf[collection.mutable.Buffer[V]].toSeq
-  opaque type SingleValueKey[Key, S <: Scope, V] = Key
-  opaque type MultiValueKey[Key, S <: Scope, V] = Key
-  opaque type SingleNodeKey[Key, S <: Scope, V] = Key
-  opaque type MultiNodeKey[Key, S <: Scope, V] = Key
-  object Key:
-    inline def singleValueKey[Key <: String & Singleton, S <: Scope, V]: SingleValueKey[Key, S, V] =
-      compiletime.constValue[Key].asInstanceOf
-    inline def multiValueKey[Key <: String & Singleton, S <: Scope, V]: MultiValueKey[Key, S, V] =
-      compiletime.constValue[Key].asInstanceOf
-    inline def singleNodeKey[Key <: String & Singleton, S <: Scope, V]: SingleNodeKey[Key, S, V] =
-      compiletime.constValue[Key].asInstanceOf
-    inline def multiNodeKey[Key <: String & Singleton, S <: Scope, V]: MultiNodeKey[Key, S, V] =
-      compiletime.constValue[Key].asInstanceOf
+    def get[K <: String & Singleton,V](key:K)
+    (using either:QEither[SingleNodeKey[K,S,V],MultiNodeKey[K,S,V],SingleValueKey[K,S,V],MultiValueKey[K,S,V]])
+    :GetResult[either.type,K,S,V] = 
+      (either match
+        case LL(value) => a.value.get(key)
+        case LR(value) => a.value.get(key) match
+          case None        => Nil
+          case Some(value) => value.asInstanceOf[collection.mutable.Buffer[S >> V]].toSeq
+        case RL(value) => a.value.get(key)
+        case RR(value) => a.value.get(key) match
+          case None        => Nil
+          case Some(value) => value.asInstanceOf[collection.mutable.Buffer[V]].toSeq
+      ).asInstanceOf
   import Scope.*
   def obj(closure: Scope.Root ?=> Unit): Scope.Root =
     val root: Scope.Root = Scope.Root(collection.mutable.HashMap.empty)
     closure(using root)
     root
-  type Ele = [VK] =>> VK match
-    case Left[SingleValueKey[?,?,v],?] => v
-    case Right[?,MultiValueKey[?,?,v]] => collection.Iterable[v]
   extension [S <: Scope, K <: Singleton & String, V](key: K)
-    def :=[E <: Either[SingleValueKey[K,S,V],MultiValueKey[K,S,V]]](using S,E)(value:Ele[E]) =
-      summon[E] match
-        case Left(_) => summon[S].value.put(key,value)
-        case Right(_) => summon[S].value.put(key,value.asInstanceOf[Ele[Right[?,?]]].toBuffer)
+    def :=(using s:S,e:Either[SingleValueKey[K,S,V],MultiValueKey[K,S,V]])(value: e.type match
+      case Left[SingleValueKey[?,?,v],?] => v
+      case Right[?,MultiValueKey[?,?,v]] => collection.Iterable[v]
+    ) = e match
+      case Left(_) => summon[S].value.put(key,value)
+      case Right(_) => summon[S].value.put(key,value.asInstanceOf[collection.Iterable[?]].toBuffer)
     def +=(using S,MultiValueKey[K, S, V])(value: V): Unit =
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, collection.mutable.Buffer(value))
