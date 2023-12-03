@@ -31,7 +31,7 @@ object core:
     inline def multiNodeKey[K <: String & Singleton, S <: Scope, V]: MultiNodeKey[K, S, V] =
       compiletime.constValue[K].asInstanceOf
   export Scope.*
-  type GetResult[A,K,S,V] = A match
+  type GetResult[A,S,V] = A match
     case LL[?] => Option[S >> V]
     case LR[?] => Seq[S >> V]
     case RL[?] => Option[V]
@@ -51,7 +51,7 @@ object core:
       .to(collection.immutable.HashMap)
     def get[K <: String & Singleton,V](key:K)
     (using either:QEither[SingleNodeKey[K,S,V],MultiNodeKey[K,S,V],SingleValueKey[K,S,V],MultiValueKey[K,S,V]])
-    :GetResult[either.type,K,S,V] = 
+    :GetResult[either.type,S,V] = 
       (either match
         case LL(value) => a.value.get(key)
         case LR(value) => a.value.get(key) match
