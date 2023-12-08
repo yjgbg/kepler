@@ -147,8 +147,7 @@ object SampleTest:
   def main: Unit = 
     import kubernetes.{*,given}
     context("orbstack"):
-      Namespace:
-        name := "default"
+      Namespace(name := "default"):
         PersistentVolumeClaim:
           name := "123"
           spec(storageClassName := "storageClassName",accessModes += "ReadWriteOnce")

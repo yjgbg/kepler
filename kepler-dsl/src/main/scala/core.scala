@@ -1,6 +1,7 @@
 package com.github.yjgbg.kepler.dsl
 
 object core:
+  type Closure[A] = A ?=> Unit
   given [A](using A):Left[A,Nothing] = Left(summon)
   given [A](using A):Right[Nothing,A] = Right(summon)
   sealed trait QEither[+A,+B,+C,+D]
@@ -63,7 +64,7 @@ object core:
           case Some(value) => value.asInstanceOf[collection.mutable.Buffer[V]].toSeq
       ).asInstanceOf
   import Scope.*
-  def obj(closure: Scope.Root ?=> Unit): Scope.Root =
+  def obj(closure: Closure[Root]): Scope.Root =
     val root: Scope.Root = Scope.Root(collection.mutable.HashMap.empty)
     closure(using root)
     root
@@ -82,7 +83,7 @@ object core:
       summon[S].value.get(key) match
         case None      => summon[S].value.put(key, value.toBuffer)
         case Some(seq) => seq.asInstanceOf[collection.mutable.Buffer[V]] ++= value
-    def apply(using s:S,either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]])(closure: S >> V ?=> Unit): Unit =
+    def apply(using s:S,either: Either[SingleNodeKey[K, S, V], MultiNodeKey[K, S, V]])(closure: Closure[S >> V]): Closure[S >> V] => Unit =
       val x: S >> V = Scope.>>[S, V](collection.mutable.HashMap.empty)
       closure(using x)
       either match
@@ -91,3 +92,4 @@ object core:
           s.value.get(key) match
             case None        => s.value.put(key, collection.mutable.Buffer(x))
             case Some(value) => value.asInstanceOf[collection.mutable.Buffer[Any]] += x
+      closure1 => closure1(using x)
