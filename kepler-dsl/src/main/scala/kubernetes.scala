@@ -29,11 +29,13 @@ object kubernetes:
     | _ >> CronJob.type
     | _ >> PersistentVolumeClaim.type
   val name:"name" = compiletime.constValue
-  given [A<: _ >> Namespace.type | ResourceScope | _ >> containers.type]:SingleValueKey[name.type,A,String] = Key.singleValueKey
+  given [A<: _ >> Namespace.type | ResourceScope >> metadata.type | _ >> containers.type]:SingleValueKey[name.type,A,String] = Key.singleValueKey
+  val metadata: "metadata" = compiletime.constValue
+  given [A <: ResourceScope]:SingleNodeKey[metadata.type,A,metadata.type] = Key.singleNodeKey
   val labels:"labels" = compiletime.constValue
-  given [A<: ResourceScope]:MultiValueKey[labels.type,A,(String,String)] = Key.multiValueKey
+  given [A<: _ >> metadata.type]:MultiValueKey[labels.type,A,(String,String)] = Key.multiValueKey
   val annotations:"annotations" = compiletime.constValue
-  given [A<: ResourceScope]:MultiValueKey[annotations.type,A,(String,String)] = Key.multiValueKey
+  given [A<: _ >> metadata.type]:MultiValueKey[annotations.type,A,(String,String)] = Key.multiValueKey
   val spec:"spec" = compiletime.constValue
   given [A<:ResourceScope]:SingleNodeKey[spec.type,A,spec.type] = Key.singleNodeKey
   val selector:"selector" = compiletime.constValue
@@ -149,10 +151,11 @@ object SampleTest:
     context("orbstack"):
       Namespace(name := "default"):
         PersistentVolumeClaim:
-          name := "123"
+          metadata(name := "123")
           spec(storageClassName := "storageClassName",accessModes += "ReadWriteOnce")
         ConfigMap:
-          name := ""
+          metadata:
+            name := ""
           data := Map(
              "application.yml" -> raw"""
                |spring:
@@ -161,13 +164,14 @@ object SampleTest:
                |""".stripMargin.stripTrailing().nn.stripLeading().nn
           )
         Pod:
-          name := "123"
-          labels += "1" -> "2"
+          metadata:
+            name := "123"
+            labels += "1" -> "2"
           spec:
             println()
             containers(name := "",image := "")
         CronJob:
-          name := "123"
+          metadata(name := "123")
           spec:
             suspend := false
             failedJobsHistoryLimit := 3
@@ -176,16 +180,16 @@ object SampleTest:
               spec:
                 backoffLimit := 3
                 template:
-                  labels += "app" -> "123"
+                  metadata(labels += "app" -> "123")
         Job:
-          name := "123"
+          metadata(name := "123")
           spec(backoffLimit := 3)
         Deployment:
-          name := "nginx"
+          metadata(name := "nginx")
           spec:
             selector += "app" -> "nginx"
             template:
-              labels += "app" -> "nginx"
+              metadata(labels += "app" -> "nginx")
               spec:
                 restartPolicy := "Never"
                 hostAliases += Seq("www.baidu.com") -> "192.168.50.1"
