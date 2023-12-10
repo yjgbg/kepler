@@ -63,6 +63,10 @@ object core:
           case None        => Nil
           case Some(value) => value.asInstanceOf[collection.mutable.Buffer[V]].toSeq
       ).asInstanceOf
+  extension [K <: String & Singleton](key:K)
+    def get[V,S <: Scope]
+      (using scope:S,either:QEither[SingleNodeKey[K,S,V],MultiNodeKey[K,S,V],SingleValueKey[K,S,V],MultiValueKey[K,S,V]])
+      :GetResult[either.type,S,V] =scope.get(key)(using either)
   import Scope.*
   def obj(closure: Closure[Root]): Scope.Root =
     val root: Scope.Root = Scope.Root(collection.mutable.HashMap.empty)
