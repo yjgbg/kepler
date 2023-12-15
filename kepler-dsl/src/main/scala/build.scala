@@ -20,8 +20,8 @@ object build:
     _ >> project.type
     | _ >> project.type >> task.type
     ]:MultiValueKey[dependsOn.type,A,String] = Key.multiValueKey
-  val sourceSets: "sourceSets" = compiletime.constValue
-  given [A <: _ >> project.type]:MultiValueKey[sourceSets.type,A,String] = Key.multiValueKey
+  val source: "source" = compiletime.constValue
+  given [A <: _ >> project.type]:MultiValueKey[source.type,A,String] = Key.multiValueKey
   val target: "target" = compiletime.constValue
   given [A <: _ >> project.type]:SingleValueKey[target.type,A,String] = Key.singleValueKey
   def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
@@ -29,7 +29,7 @@ object build:
     given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
     closure.apply
     Plugin:
-      sourceSets += "src"
+      source += "src"
       target := "target"
       task(name := "~"):
         action := {p =>
