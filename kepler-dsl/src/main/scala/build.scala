@@ -14,17 +14,23 @@ object build:
   val task: "task" = compiletime.constValue
   given [A <: _ >> project.type]:MultiNodeKey[task.type,A,task.type] = Key.multiNodeKey
   val action: "action" = compiletime.constValue
-  given [A <: _ >> project.type]:SingleValueKey[action.type,A >> task.type,A => Unit] = Key.singleValueKey
+  given [A <: _ >> task.type]:SingleValueKey[action.type,A,A => Unit] = Key.singleValueKey
   val dependsOn: "dependsOn" = compiletime.constValue
   given [A <: 
     _ >> project.type
     | _ >> project.type >> task.type
     ]:MultiValueKey[dependsOn.type,A,String] = Key.multiValueKey
+  val sourceSets: "sourceSets" = compiletime.constValue
+  given [A <: _ >> project.type]:MultiValueKey[sourceSets.type,A,String] = Key.multiValueKey
+  val target: "target" = compiletime.constValue
+  given [A <: _ >> project.type]:SingleValueKey[target.type,A,String] = Key.singleValueKey
   def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
     if (args.isEmpty) println("no task to execute")
     given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
     closure.apply
     Plugin:
+      sourceSets += "src"
+      target := "target"
       task(name := "~"):
         action := {p =>
           val newCmdLine = ProcessHandle.current().nn.info().nn.commandLine().nn.get().nn
