@@ -16,4 +16,5 @@ lazy val `kepler-dsl` = (project in file ("kepler-dsl"))
     .settings(
       name := "kepler-dsl-std",
       idePackagePrefix := Some(organization.value + ".kepler.dsl"),
+      libraryDependencies += "ch.epfl.scala" % "bsp4j" % "2.2.0-M1"
     )
