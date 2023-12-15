@@ -8,31 +8,6 @@ object build:
     def apply(closure: _ >> project.type ?=> Unit) = new Plugin:
       override def apply(using ? >> project.type): Unit = closure.apply
   val project:"project" = compiletime.constValue
-  private def hotReload(args:Seq[String]) = Plugin:
-    task(name := "~"):
-      action := {p =>
-        val newCmdLine = ProcessHandle.current().nn.info().nn.commandLine().nn.get().nn
-          .replaceAll("~[ \t]*"+args.tail.mkString("[ \t]*"),args.tail.mkString(" ")).nn
-        println(newCmdLine)
-        import scala.sys.process.*
-        System.exit(newCmdLine.!)
-      }
-  def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
-    if (args.isEmpty) println("no task to execute")
-    given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
-    hotReload(args).apply
-    closure.apply
-    def executeTask(p: _ >> project.type,args:Seq[String]):Unit = 
-      p.get(task).filter(it => it.get(name).get == args.head).headOption match
-        case Some(value) => value.get(action).foreach:ac => 
-          value.get(dependsOn).foreach:n => 
-            executeTask(p,Seq(n))
-          ac(p.asInstanceOf)
-        case None => p.get(project).filter(it => it.get(name).get == args.head).headOption match
-          case Some(value) => executeTask(value,args.tail)
-          case None => println("no task to execute")
-    executeTask(scope,args)
-  }
   given [A <: _ >> project.type]:MultiNodeKey[project.type,A,project.type] = Key.multiNodeKey
   val name: "name" = compiletime.constValue
   given [A <: _ >> project.type| _ >> project.type >> task.type]:SingleValueKey[name.type,A,String] = Key.singleValueKey
@@ -45,6 +20,31 @@ object build:
     _ >> project.type
     | _ >> project.type >> task.type
     ]:MultiValueKey[dependsOn.type,A,String] = Key.multiValueKey
+  def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
+    if (args.isEmpty) println("no task to execute")
+    given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
+    closure.apply
+    Plugin:
+      task(name := "~"):
+        action := {p =>
+          val newCmdLine = ProcessHandle.current().nn.info().nn.commandLine().nn.get().nn
+            .replaceAll("~[ \t]*"+args.tail.mkString("[ \t]*"),args.tail.mkString(" ")).nn
+          println(newCmdLine)
+          import scala.sys.process.*
+          System.exit(newCmdLine.!)
+        }
+    .apply
+    def executeTask(p: _ >> project.type,args:Seq[String]):Unit = 
+      p.get(task).filter(it => it.get(name).get == args.head).headOption match
+        case Some(value) => value.get(action).foreach:ac => 
+          value.get(dependsOn).foreach:n => 
+            executeTask(p,Seq(n))
+          ac(p.asInstanceOf)
+        case None => p.get(project).filter(it => it.get(name).get == args.head).headOption match
+          case Some(value) => executeTask(value,args.tail)
+          case None => println("no task to execute")
+    executeTask(scope,args)
+  }
 object buildSample:
   import build.{*,given}
   @main def main(args:String*) = rootProject(args):
