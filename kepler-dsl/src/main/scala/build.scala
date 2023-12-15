@@ -20,11 +20,14 @@ object build:
     if (args.isEmpty) println("no task to execute")
     given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
     ~.apply
-    closure(using scope)
-    val ac = scope.get(task).toSeq.filter(_.get(name).exists(_ == args.head)).headOption.flatMap(_.get(action))
-    ac match
-      case None => println("no task to execute")
-      case Some(value) => value(scope.asInstanceOf,args.tail)
+    closure.apply
+    def executeTask(p: _ >> project.type,args:Seq[String]):Unit = 
+      p.get(task).filter(it => it.get(name).get == args.head).headOption match
+        case Some(value) => value.get(action).foreach(_(p.asInstanceOf,args.tail))
+        case None => p.get(project).filter(it => it.get(name).get == args.head).headOption match
+          case Some(value) => executeTask(value,args.tail)
+          case None => println("no task to execute")
+    executeTask(scope,args)
   }
   given [A <: _ >> project.type]:MultiNodeKey[project.type,A,project.type] = Key.multiNodeKey
   val name: "name" = compiletime.constValue
@@ -38,50 +41,19 @@ object build:
     _ >> project.type
     | _ >> project.type >> task.type
     ]:MultiValueKey[dependsOn.type,A,String] = Key.multiValueKey
-// object bsp:
-//   import build.{*,given}
-//   def apply(using ? >> project.type): build.Plugin = 
-//     task: a ?=> 
-//       name := "~"
-//       action := {(p,args) =>
-//         import scala.sys.process.*
-//         val commandLine = ProcessHandle.current().nn.info().nn.commandLine().nn.orElse("").nn
-//         val cmd = commandLine.replaceFirst(" ~ "," ").nn
-//         val p = "".run()
-//         System.exit(p.exitValue())
-//       }
-//     task: a ?=>
-//       name := "initBsp"
-//       action := {(p,args) => 
-//         // 输出startBsp文件到项目跟目录
-//       }
-//     task: a ?=>
-//       name := "bsp"
-//       action := {(p,args) => 
-//         val thread = new Thread():
-//           override def run(): Unit = while (true)
-//             println("Hello")
-//             Thread.sleep(1000L)
-//         thread.start()
-//         val scanner = java.util.Scanner(System.in)
-//         scanner.nextLine()
-//       }
 object buildSample:
   import build.{*,given}
-  @main def main(args:String*) = rootProject(args):
-    // bsp.apply
-    // javaPlugin.apply
-    // javaPlugin.version := "21"
+  val printName = Plugin:
     task(name := "printName"):
       dependsOn += "另一个task的名字"
       action := { (p,args) => p.get(name) match
         case None => println()
         case Some(value) => println(value)
       }
+  @main def main(args:String*) = rootProject(args):
+    name := "root"
+    printName.apply
     project(name := "kepler-dsl"):
-      project(name := "kepler-dsl-core")
-      task(name := "printName"):
-        action := { (p,args) => p.get(name) match
-          case None => println()
-          case Some(value) => println(value)
-        }
+      printName.apply
+      project(name := "kepler-dsl-core"):
+        printName.apply
