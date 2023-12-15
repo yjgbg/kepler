@@ -1,24 +1,34 @@
 package com.github.yjgbg.kepler.dsl
+
 object build:
-  export core.{*,given}  
+  export core.{*,given}
+  trait Plugin:
+    def apply(using _ >> project.type): Unit
+  object Plugin:
+    def apply(closure: _ >> project.type ?=> Unit) = new Plugin:
+      override def apply(using ? >> project.type): Unit = closure.apply
   val project:"project" = compiletime.constValue
-  inline def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
-    val scope:Root >> project.type = Scope.>>(collection.mutable.HashMap())
+  private def ~ = Plugin:
+    task(name := "~"):
+      action := {(p,args) =>
+        val cmdLine = ProcessHandle.current().nn.info().nn.commandLine().nn.get().nn
+        val newCmdLine = cmdLine.replaceAll("~[ \t]*"+args.mkString("[ \t]*"),args.mkString(" ")).nn
+        import scala.sys.process.*
+        System.exit(newCmdLine.!)
+      }
+  def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
+    if (args.isEmpty) println("no task to execute")
+    given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
+    ~.apply
     closure(using scope)
-    if args.length >= 2 then {
-      val proj = args.head.split(":").nn.map(_.nn).foldLeft[_ >> project.type](scope)((s,c) => s.get(project).filter(it => it.get(name).filter(_ == c).isDefined).head)
-      val ac = proj.get(task).toSeq.filter(_.get(name).exists(_ == args.tail.head)).head.get(action).get
-      ac(proj.asInstanceOf,args.tail.tail)
-    } else if args.length == 1 then {
-       val ac = scope.get(task).toSeq.filter(_.get(name).exists(_ == args.head)).head.get(action).get
-       ac(scope.asInstanceOf,args.tail)
-    } else throw IllegalArgumentException()
+    val ac = scope.get(task).toSeq.filter(_.get(name).exists(_ == args.head)).headOption.flatMap(_.get(action))
+    ac match
+      case None => println("no task to execute")
+      case Some(value) => value(scope.asInstanceOf,args.tail)
   }
   given [A <: _ >> project.type]:MultiNodeKey[project.type,A,project.type] = Key.multiNodeKey
   val name: "name" = compiletime.constValue
-  given [A <: _ >> project.type| _ >> task.type]:SingleValueKey[name.type,A,String] = Key.singleValueKey
-  val organization: "organization" = compiletime.constValue
-  given [A <: _ >> project.type]:SingleValueKey[organization.type,A,String] = Key.singleValueKey
+  given [A <: _ >> project.type| _ >> project.type >> task.type]:SingleValueKey[name.type,A,String] = Key.singleValueKey
   val task: "task" = compiletime.constValue
   given [A <: _ >> project.type]:MultiNodeKey[task.type,A,task.type] = Key.multiNodeKey
   val action: "action" = compiletime.constValue
@@ -26,47 +36,52 @@ object build:
   val dependsOn: "dependsOn" = compiletime.constValue
   given [A <: 
     _ >> project.type
-    | _ >> task.type
+    | _ >> project.type >> task.type
     ]:MultiValueKey[dependsOn.type,A,String] = Key.multiValueKey
-  val library: "library" = compiletime.constValue
-  given [A <: _ >> project.type]:MultiValueKey[library.type,A,String] = Key.multiValueKey
-  val repository: "repository" = compiletime.constValue
-  given [A <: _ >> project.type]:MultiValueKey[repository.type,A,String] = Key.multiValueKey
-  val sourceSets: "sourceSets" = compiletime.constValue
-  given [A <: _ >> project.type]:MultiValueKey[sourceSets.type,A,String] = Key.multiValueKey
-  val resourceSets: "resourceSets" = compiletime.constValue
-  given [A <: _ >> project.type]:MultiValueKey[resourceSets.type,A,String] = Key.multiValueKey
-  type Plugin = _ >> project.type ?=> Unit
+// object bsp:
+//   import build.{*,given}
+//   def apply(using ? >> project.type): build.Plugin = 
+//     task: a ?=> 
+//       name := "~"
+//       action := {(p,args) =>
+//         import scala.sys.process.*
+//         val commandLine = ProcessHandle.current().nn.info().nn.commandLine().nn.orElse("").nn
+//         val cmd = commandLine.replaceFirst(" ~ "," ").nn
+//         val p = "".run()
+//         System.exit(p.exitValue())
+//       }
+//     task: a ?=>
+//       name := "initBsp"
+//       action := {(p,args) => 
+//         // 输出startBsp文件到项目跟目录
+//       }
+//     task: a ?=>
+//       name := "bsp"
+//       action := {(p,args) => 
+//         val thread = new Thread():
+//           override def run(): Unit = while (true)
+//             println("Hello")
+//             Thread.sleep(1000L)
+//         thread.start()
+//         val scanner = java.util.Scanner(System.in)
+//         scanner.nextLine()
+//       }
 object buildSample:
   import build.{*,given}
   @main def main(args:String*) = rootProject(args):
-    name := "rootProject"
-    repository += "https://"
-    organization := "com.github.yjgbg"
-    sourceSets += "src/main/scala"
-    sourceSets += "src/main/java"
-    resourceSets += "src/main/resources"
-    task:
-      name := "printName"
+    // bsp.apply
+    // javaPlugin.apply
+    // javaPlugin.version := "21"
+    task(name := "printName"):
       dependsOn += "另一个task的名字"
       action := { (p,args) => p.get(name) match
+        case None => println()
+        case Some(value) => println(value)
+      }
+    project(name := "kepler-dsl"):
+      project(name := "kepler-dsl-core")
+      task(name := "printName"):
+        action := { (p,args) => p.get(name) match
           case None => println()
           case Some(value) => println(value)
-      }
-    project:
-      name := "kepler-dsl"
-      project(name := "kepler-dsl-core")
-      library += "com.github.yjgbg::kepler-dsl:1.0.0"
-      task:
-        name := "printName"
-        dependsOn += "另一个task的名字"
-        action := { (p,args) => p.get(name) match
-            case None => println()
-            case Some(value) => println(value)
         }
-    project:
-      name := "kepler-json-dsl"
-      dependsOn += "kepler-dsl"
-      task:
-        name := "build"
-
