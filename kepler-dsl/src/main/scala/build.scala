@@ -38,18 +38,20 @@ object build:
       case None => p.get(project).filter(it => it.get(name).get == args.head).headOption match
         case Some(value) => executeTask(value,args.tail)
         case None => println("no such task to execute")
-  def rootProject(args:Seq[String])(closure:Root >> project.type ?=> Unit):Unit = {
+  inline def rootProject(args:Seq[String])(using sourcecode.File)(closure:Root >> project.type ?=> Unit):Unit =
+    rootProject(summon,args,closure)
+  def rootProject(s:sourcecode.File,args:Seq[String],closure:Root >> project.type ?=> Unit):Unit = {
     given scope: >>[Root,project.type] = Scope.>>(collection.mutable.HashMap())
     closure.apply
     Plugin:
       task(name := "bsp-init"):
         action := {p => 
           val seq = ProcessHandle.current().nn.info().nn.commandLine().nn.get().nn.split(" ").nn.toSeq.nn
-          val argv = (seq.init :+ "bsp").map(str => s"\"$str\"").mkString(",")
+          val argv = (seq.init :+ "bsp-daemon").map(str => s"\"$str\"").mkString(",")
           import java.nio.file.{Files,Paths}
           Files.writeString(Paths.get(s"./.bsp/${p.get(name).get}.json"),raw"""
           |{
-          |  "name": "${p.get(name).get}",
+          |  "name": "kepler",
           |  "version": "1.1.0",
           |  "bspVersion": "2.1.0-M7",
           |  "languages": ["scala","java"],
@@ -57,13 +59,30 @@ object build:
           |}
           |""".stripMargin.stripTrailing().nn.stripLeading()) 
         }
+      task(name := "bsp-daemon"):
+        action := {p =>
+          var o = ""
+          var n = java.nio.file.Files.readString(java.nio.file.Paths.get(s.value)).nn
+          var p:scala.sys.process.Process|Null = null
+          while (true) {
+            if (o != n)
+              import scala.sys.process.*
+              s"./scala ${s.value} -- bsp-init".!
+              if p!=null then p.destroy()
+              p = java.lang.ProcessBuilder("./scala",s.value,"--","bsp").inheritIO().nn.run()
+              o = n
+            else
+              Thread.sleep(100)
+              n = java.nio.file.Files.readString(java.nio.file.Paths.get(s.value)).nn
+          }
+        }
       task(name := "bsp"):
         action := {p =>
           import ch.epfl.scala.bsp4j.*
           import java.util.concurrent.CompletableFuture
           import scala.jdk.CollectionConverters.{IterableHasAsScala,SeqHasAsJava}
           val localServer = new BuildServer with ScalaBuildServer:
-            val rootUri = new java.util.concurrent.atomic.AtomicReference[String]()
+            val rootUri = new java.util.concurrent.atomic.AtomicReference[String]("file:"+java.nio.file.Paths.get(s.value).nn.toAbsolutePath().nn.getParent().nn.toAbsolutePath().nn.toString()+"/")
             private def getProjectByPath(rootOption: Option[_ >> project.type],seq:List[String]):Option[_ >> project.type] = rootOption match
               case None => None
               case Some(root) => seq match
@@ -72,7 +91,6 @@ object build:
             override def buildInitialize(params: InitializeBuildParams | Null): CompletableFuture[InitializeBuildResult]|Null = 
               CompletableFuture.supplyAsync:() => 
                 println(params)
-                rootUri.set(params.nn.getRootUri())
                 val buildServerCapabilities = BuildServerCapabilities()
                 val langList = java.util.List.of("java","scala")
                 buildServerCapabilities.setCompileProvider(CompileProvider(langList))
