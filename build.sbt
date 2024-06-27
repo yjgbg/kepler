@@ -1,8 +1,28 @@
-ThisBuild / scalaVersion := "3.3.1"
+ThisBuild / scalaVersion := "3.3.3"
 ThisBuild / scalacOptions ++= Seq(
-  "-Yexplicit-nulls","-Wunused:all","-source:future"
+  "-Yexplicit-nulls","-Wunused:all","-source:3.3"
 )
-ThisBuild / scalacOptions += "-Wunused:all"
+def std(project:Project):Project = project
+  .settings(
+    target := {
+      val path = file(".").toPath()
+      .toAbsolutePath()
+      .relativize(baseDirectory.value.toPath())
+      .toString()
+      file(s"target/projects/${path}")
+    },
+    Compile / unmanagedSourceDirectories ~= 
+      {_.map{_.getParentFile.getParentFile.getParentFile}.distinct},
+    Compile / unmanagedResourceDirectories ~= 
+      {_.map{_.getParentFile.getParentFile.getParentFile}.distinct},
+  )
+def graal(project:Project): Project = project
+  .enablePlugins(NativeImagePlugin)
+  .settings(
+    nativeImageJvm := "graalvm-community",
+    nativeImageVersion := "21.0.2",
+    nativeImageJvmIndex := "cs"
+  )
 ThisBuild / credentials += Credentials(
   "Sonatype Nexus Repository Manager",
   "oss.sonatype.org",
@@ -13,9 +33,14 @@ ThisBuild / version := "1.0.0-SNAPSHOT"
 ThisBuild / organization := "com.github.yjgbg" 
 
 lazy val `kepler-dsl` = (project in file ("kepler-dsl"))
-    .settings(
-      name := "kepler-dsl-std",
-      idePackagePrefix := Some(organization.value + ".kepler.dsl"),
-      libraryDependencies += "ch.epfl.scala" % "bsp4j" % "2.2.0-M1",
-      libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1"
-    )
+  .configure(std)
+  .settings(
+    name := "kepler-dsl-std",
+    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1"
+  )
+lazy val `kepler-dsl-ex` = (project in file ("kepler-dsl-ex"))
+  .configure(std)
+  .settings(
+    name := "kepler-dsl-ex",
+    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1"
+  )

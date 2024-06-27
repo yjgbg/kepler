@@ -145,7 +145,7 @@ object kubernetes:
     val x = obj(closure)
     println(x.toHashMap)
 object SampleTest:
-  // @main 
+  @main 
   def main: Unit = 
     import kubernetes.{*,given}
     context("orbstack"):
@@ -172,8 +172,7 @@ object SampleTest:
             containers(name := "",image := "")
         CronJob:
           metadata(name := "123")
-          spec:
-            suspend := false
+          spec(suspend := false):
             failedJobsHistoryLimit := 3
             successfulJobsHistoryLimit := 4
             jobTemplate:

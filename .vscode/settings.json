@@ -10,4 +10,9 @@
     "**/.ammonite": true
   },
   "files.autoSave": "afterDelay",
+  "metals.inlayHints.hintsInPatternMatch.enable": true,
+  "metals.inlayHints.implicitArguments.enable": true,
+  // "metals.inlayHints.implicitConversions.enable": true,
+  // "metals.inlayHints.typeParameters.enable": true,
+  "metals.inlayHints.inferredTypes.enable": true
 }
