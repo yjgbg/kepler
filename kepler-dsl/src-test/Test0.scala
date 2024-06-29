@@ -15,7 +15,6 @@ object Test0 extends Properties("String"):
     import kubernetes.base.{*,given}
     context("orbstack"):
       namespace("default"):
-        domain("stdResource"):
           import kubernetes.{name => _name,*,given}
           PersistentVolumeClaim:
             metadata(_name := "123")

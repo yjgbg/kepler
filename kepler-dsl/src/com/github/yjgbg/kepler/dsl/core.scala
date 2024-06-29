@@ -1,7 +1,6 @@
 package com.github.yjgbg.kepler.dsl
 
 object core:
-  def domain(name:String)(closure: => Unit):Unit = closure
   type Closure[A] = A ?=> Unit
   given [A](using A):Left[A,Nothing] = Left(summon)
   given [A](using A):Right[Nothing,A] = Right(summon)
