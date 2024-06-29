@@ -1,6 +1,7 @@
 package com.github.yjgbg.kepler.dsl
 
 object core:
+  def domain(name:String)(closure: => Unit):Unit = closure
   type Closure[A] = A ?=> Unit
   given [A](using A):Left[A,Nothing] = Left(summon)
   given [A](using A):Right[Nothing,A] = Right(summon)
@@ -13,10 +14,10 @@ object core:
   given [A](using A):LR[A] = LR(summon)
   given [A](using A):RL[A] = RL(summon)
   given [A](using A):RR[A] = RR(summon)
-  enum Scope(private[core] val value: collection.mutable.HashMap[String, Any]):
-    case Root(private[core] override val value: collection.mutable.HashMap[String, Any]) extends Scope(value)
+  enum Scope(val value: collection.mutable.HashMap[String, Any]):
+    case Root(override val value: collection.mutable.HashMap[String, Any]) extends Scope(value)
     case >>[+A <: Scope, +B](
-        private[core] override val value: collection.mutable.HashMap[String, Any]
+        override val value: collection.mutable.HashMap[String, Any]
     ) extends Scope(value)
   opaque type SingleValueKey[K, S <: Scope, V] = K
   opaque type MultiValueKey[K, S <: Scope, V] = K

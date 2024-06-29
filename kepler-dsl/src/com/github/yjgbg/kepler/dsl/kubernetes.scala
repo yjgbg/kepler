@@ -1,9 +1,23 @@
 package com.github.yjgbg.kepler.dsl
 
 object kubernetes:
-  export core.*
-  val Namespace:"Namespace" = compiletime.constValue
-  given MultiNodeKey[Namespace.type,Scope.Root,Namespace.type] = Key.multiNodeKey
+  object base:
+    export core.{*,given}
+    def context(contextName:String,action:"apply"|"delete"|"create"|Null = null)(closure: Scope.Root ?=> Unit):Unit = 
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ArrayBuffer
+      def transform(any:Any):Any = any match
+        case hashMap:HashMap[?,?] => hashMap.mapValues{v => transform(v)}.to(HashMap)
+        case arrayBuffer:ArrayBuffer[?] => arrayBuffer.map{transform}
+        case scope:Scope => transform(scope.value)
+        case _ => any
+      val x = transform(obj(closure))
+      println(x)
+    val Namespace:"Namespace" = compiletime.constValue
+    given MultiNodeKey[Namespace.type,Scope.Root,Namespace.type] = Key.multiNodeKey
+    def namespace(using Scope)(name:String)(closure:Closure[Scope.Root >> Namespace.type]):Closure[Scope.Root] = 
+      Namespace(kubernetes.name := name,closure)
+  import base.{*,given}
   val Deployment:"Deployment" = compiletime.constValue
   given [A <: _ >> Namespace.type]:MultiNodeKey[Deployment.type,A,Deployment.type] = Key.multiNodeKey
   val Service:"Service" = compiletime.constValue
@@ -33,7 +47,7 @@ object kubernetes:
   val metadata: "metadata" = compiletime.constValue
   given [A <: ResourceScope]:SingleNodeKey[metadata.type,A,metadata.type] = Key.singleNodeKey
   val labels:"labels" = compiletime.constValue
-  given [A<: _ >> metadata.type]:MultiValueKey[labels.type,A,(String,String)] = Key.multiValueKey
+  given [A<: _ >> metadata.type]:SingleValueKey[labels.type,A,Map[String,String]] = Key.singleValueKey
   val annotations:"annotations" = compiletime.constValue
   given [A<: _ >> metadata.type]:MultiValueKey[annotations.type,A,(String,String)] = Key.multiValueKey
   val spec:"spec" = compiletime.constValue
@@ -141,66 +155,5 @@ object kubernetes:
   given [A <: _ >> containers.type]: MultiValueKey[ports.type,A,Int] = Key.multiValueKey
   val image: "image" = compiletime.constValue
   given [A <: _ >> containers.type] : SingleValueKey[image.type,A,String] = Key.singleValueKey
-  def context(contextName:String,action:"apply"|"delete"|"create"|Null = null)(closure: Scope.Root ?=> Unit):Unit = 
-    val x = obj(closure)
-    println(x.toHashMap)
-object SampleTest:
-  @main 
-  def main: Unit = 
-    import kubernetes.{*,given}
-    context("orbstack"):
-      Namespace(name := "default"):
-        PersistentVolumeClaim:
-          metadata(name := "123")
-          spec(storageClassName := "storageClassName",accessModes += "ReadWriteOnce")
-        ConfigMap:
-          metadata:
-            name := ""
-          data := Map(
-             "application.yml" -> raw"""
-               |spring:
-               |  datasource:
-               |    url: qwejqwiehkwehdqwliejo
-               |""".stripMargin.stripTrailing().nn.stripLeading().nn
-          )
-        Pod:
-          metadata:
-            name := "123"
-            labels += "1" -> "2"
-          spec:
-            println()
-            containers(name := "",image := "")
-        CronJob:
-          metadata(name := "123")
-          spec(suspend := false):
-            failedJobsHistoryLimit := 3
-            successfulJobsHistoryLimit := 4
-            jobTemplate:
-              spec:
-                backoffLimit := 3
-                template:
-                  metadata(labels += "app" -> "123")
-        Job:
-          metadata(name := "123")
-          spec(backoffLimit := 3)
-        Deployment:
-          metadata(name := "nginx")
-          spec:
-            selector += "app" -> "nginx"
-            template:
-              metadata(labels += "app" -> "nginx")
-              spec:
-                restartPolicy := "Never"
-                hostAliases += Seq("www.baidu.com") -> "192.168.50.1"
-                volumeEmptyDir += "volumeName0"
-                volumeConfigMap += "volumeName1" -> "config-map-name"
-                volumePVC += "volumeName2" -> "pvc-name"
-                initContainers:
-                  livenessProbe(
-                    initialDelaySeconds := 3,
-                    action := Action.Exec("curl -x 'localhost:8080/api/healthy'")
-                    )
-                  env += "spring.profiles.active" -> "prod"
-                  ports += 80
-                containers:
-                  println()
+  def _labels(kvs:(String,String)*):Closure[_ >> metadata.type] = 
+    labels := labels.get.getOrElse(Map.empty) ++ kvs.toMap
