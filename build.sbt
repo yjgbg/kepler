@@ -1,40 +1,43 @@
-def std(project:Project):Project = project.settings(
-  target := {
-    val path = file(".").toPath()
-      .toAbsolutePath()
-      .relativize(baseDirectory.value.toPath())
-      .toString()
-    file(s"target/projects/${path}")
-  },
-  Compile / unmanagedSourceDirectories ~= 
-    {_.map{_.getParentFile.getParentFile}.distinct},
-  Compile / unmanagedResourceDirectories ~= 
-    {_.map{_.getParentFile.getParentFile}.distinct},
-  Test / unmanagedSourceDirectories ~= 
-    {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
-  Test / unmanagedResourceDirectories ~= 
-    {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
-  libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.18.0" % Test
-  )
-def graal(project:Project): Project = project.enablePlugins(NativeImagePlugin)
-  .settings(
-    nativeImageJvm := "graalvm-community",
-    nativeImageVersion := "21.0.2",
-    nativeImageJvmIndex := "cs"
-  )
-ThisBuild / organization := "com.github.yjgbg"
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / organization := "com.yjgbg"
+ThisBuild / scalaVersion := "3.7.1"
 ThisBuild / scalacOptions += "-Yexplicit-nulls"
-// ThisBuild / scalacOptions += "-Wunused:all"
-ThisBuild / scalacOptions += "-source:3.3"
-ThisBuild / version := "1.0.0-SNAPSHOT"
-lazy val `kepler-dsl` = (project in file ("kepler-dsl"))
-  .configure(std)
+ThisBuild / version := "1.0.7"
+lazy val kepler = (project in file("."))
   .settings(
-    name := "kepler-dsl",
-    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1"
+    // target := {
+    //   val path = file(".").toPath()
+    //     .toAbsolutePath()
+    //     .relativize(baseDirectory.value.toPath())
+    //     .toString()
+    //   file(s"target/projects/${path}")
+    // },
+    // Compile / unmanagedSourceDirectories ~= 
+    //   {_.map{_.getParentFile.getParentFile}.distinct},
+    // Compile / unmanagedResourceDirectories ~= 
+    //   {_.map{_.getParentFile.getParentFile}.distinct},
+    // Test / unmanagedSourceDirectories ~= 
+    //   {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
+    // Test / unmanagedResourceDirectories ~= 
+    //   {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
+    // libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.18.0" % Test
   )
-lazy val `kepler-dsl-docs` = (project in file ("kepler-dsl-docs"))
-  .configure(std)
-  .dependsOn(`kepler-dsl`)
-  .enablePlugins(MdocPlugin)
+  .settings(
+    name := "kepler",
+    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1",
+    libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
+    libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0"
+  )
+  .settings(
+    publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/yjgbg/kepler"),
+    publishMavenStyle := true,
+    scmInfo := Some(ScmInfo(
+      url("https://github.com/yjgbg/kepler"),
+      "scm:git:git@github.com:yjgbg/kepler.git"
+    )),
+    // credentials += Credentials(
+    //   "GitHub Package Registry",
+    //   "maven.pkg.github.com",
+    //   "yjgbg",
+    //   sys.env.getOrElse("GITHUB_TOKEN","")
+    // )
+  )

@@ -74,8 +74,8 @@ object core:
     root
   extension [S <: Scope, K <: Singleton & String, V](key: K)
     def :=(using s:S,e:Either[SingleValueKey[K,S,V],MultiValueKey[K,S,V]])(value: e.type match
-      case Left[SingleValueKey[?,?,v],?] => v
-      case Right[?,MultiValueKey[?,?,v]] => collection.Iterable[v]
+      case Left[?,?] => V
+      case Right[?,?] => collection.Iterable[V]
     ) = e match
       case Left(_) => summon[S].value.put(key,value)
       case Right(_) => summon[S].value.put(key,value.asInstanceOf[collection.Iterable[?]].toBuffer)
