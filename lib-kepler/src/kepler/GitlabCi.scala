@@ -46,7 +46,7 @@ object GitlabCi:
   val untracked: "untracked" = compiletime.constValue
   given SingleValueKey[untracked.type, ? >> cache.type, Boolean] = Key.singleValueKey
 
-  import utils.*
+  export utils.*
   opaque type Event = Json
   opaque type Payload = Json
   private lazy val event:Json = sys.env("TRIGGER_PAYLOAD") |> {os.Path(_)} |> {os.read(_).asInstanceOf}
