@@ -3,7 +3,7 @@ def proj(projectName:String) = Project(projectName,file(projectName))
     name := projectName,
     organization := "com.yjgbg",
     scalaVersion := "3.7.1",
-    version := "1.0.7",
+    version := "1.0.8",
     scalacOptions += "-Yexplicit-nulls",
     target := file(s"target/projects/${projectName}"),
     Compile / unmanagedSourceDirectories := Seq(baseDirectory.value / "src"),
@@ -11,7 +11,8 @@ def proj(projectName:String) = Project(projectName,file(projectName))
     Test / unmanagedSourceDirectories := Seq(baseDirectory.value / "src-test"),
     Test / unmanagedResourceDirectories := Seq(baseDirectory.value / "src-test"),
     libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1",
-    libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0"
+    libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0",
+    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.18.1" % Test,
   )
 def lib(name:String) = proj(s"lib-$name")
   .settings(
@@ -41,6 +42,7 @@ def appNative(name:String) = proj(s"app-native-$name")
 lazy val kepler = lib("kepler")
   .settings(
     libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
+    libraryDependencies += "com.jayway.jsonpath" % "json-path" % "2.9.0"
   )
 
 

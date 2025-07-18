@@ -7,6 +7,9 @@
     "**/target": true,
     "**/.metals": true
   },
+  "editor.tabSize": 2,
+  "editor.indentSize": 2,
+  "metals.enableIndentOnPaste": true,
   "files.autoSave": "afterDelay",
   "metals.inlayHints.hintsInPatternMatch.enable": true,
   // "metals.inlayHints.implicitArguments.enable": true,
