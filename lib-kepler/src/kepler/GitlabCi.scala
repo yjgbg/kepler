@@ -1,4 +1,4 @@
-package com.github.yjgbg.kepler.dsl
+package kepler
 
 object GitlabCi:
     export core.{*,given}

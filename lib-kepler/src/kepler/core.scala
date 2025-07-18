@@ -1,4 +1,4 @@
-package com.github.yjgbg.kepler.dsl
+package kepler
 
 object core:
   type Closure[A] = A ?=> Unit

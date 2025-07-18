@@ -1,8 +1,7 @@
-package com.github.yjgbg.kepler.dsl
 
 object ForTest {
   @main def run =
-    import GitlabCi.{*,given}
+    import kepler.GitlabCi.{*,given}
     GitlabCi:
       stage := Seq("compile","test","bootJar")
       job("compile"):

@@ -1,32 +1,19 @@
-ThisBuild / organization := "com.yjgbg"
-ThisBuild / scalaVersion := "3.7.1"
-ThisBuild / scalacOptions += "-Yexplicit-nulls"
-ThisBuild / version := "1.0.7"
-lazy val kepler = (project in file("."))
+def proj(projectName:String) = Project(projectName,file(projectName))
   .settings(
-    // target := {
-    //   val path = file(".").toPath()
-    //     .toAbsolutePath()
-    //     .relativize(baseDirectory.value.toPath())
-    //     .toString()
-    //   file(s"target/projects/${path}")
-    // },
-    // Compile / unmanagedSourceDirectories ~= 
-    //   {_.map{_.getParentFile.getParentFile}.distinct},
-    // Compile / unmanagedResourceDirectories ~= 
-    //   {_.map{_.getParentFile.getParentFile}.distinct},
-    // Test / unmanagedSourceDirectories ~= 
-    //   {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
-    // Test / unmanagedResourceDirectories ~= 
-    //   {_.map{_.getParentFile.getParentFile.getParentFile / "src-test"}.distinct},
-    // libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.18.0" % Test
-  )
-  .settings(
-    name := "kepler",
+    name := projectName,
+    organization := "com.yjgbg",
+    scalaVersion := "3.7.1",
+    version := "1.0.7",
+    scalacOptions += "-Yexplicit-nulls",
+    target := file(s"target/projects/${projectName}"),
+    Compile / unmanagedSourceDirectories := Seq(baseDirectory.value / "src"),
+    Compile / unmanagedResourceDirectories := Seq(baseDirectory.value / "src"),
+    Test / unmanagedSourceDirectories := Seq(baseDirectory.value / "src-test"),
+    Test / unmanagedResourceDirectories := Seq(baseDirectory.value / "src-test"),
     libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1",
-    libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
     libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0"
   )
+def lib(name:String) = proj(s"lib-$name")
   .settings(
     publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/yjgbg/kepler"),
     publishMavenStyle := true,
@@ -34,10 +21,29 @@ lazy val kepler = (project in file("."))
       url("https://github.com/yjgbg/kepler"),
       "scm:git:git@github.com:yjgbg/kepler.git"
     )),
-    // credentials += Credentials(
-    //   "GitHub Package Registry",
-    //   "maven.pkg.github.com",
-    //   "yjgbg",
-    //   sys.env.getOrElse("GITHUB_TOKEN","")
-    // )
+    credentials += Credentials(
+      "GitHub Package Registry",
+      "maven.pkg.github.com",
+      "yjgbg",
+      sys.env.getOrElse("GITHUB_TOKEN","")
+    )
   )
+def appJvm(name:String) = proj(s"app-jvm-$name")
+  .settings(
+    assembly / assemblyJarName := s"${name}.jar",
+  )
+def appJs(name:String) = proj(s"app-js-$name")
+  .settings(
+  )
+def appNative(name:String) = proj(s"app-native-$name")
+  .settings(
+  )
+lazy val kepler = lib("kepler")
+  .settings(
+    libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
+  )
+
+
+  // helm upgrade --install --namespace kube-system nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+  //   --set nfs.server=192.168.31.200 \
+  //   --set nfs.path=/media/nfs
