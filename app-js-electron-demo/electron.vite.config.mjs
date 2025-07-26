@@ -1,5 +1,6 @@
-import { defineConfig } from "vite";
-import { spawn } from "child_process";
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { resolve } from 'path'
+import { spawn } from "child_process"
 // Utility to invoke a given sbt task and fetch its output
 function scalaJSPlugin(projectID) {
   let isDev = undefined;
@@ -53,5 +54,33 @@ function scalaJSPlugin(projectID) {
   };
 }
 export default defineConfig({
-  plugins: [scalaJSPlugin("app-js-web-demo")],
-});
+  main: {
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'main/index.js')
+        }
+      }
+    }
+  },
+  preload: {
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'preload/index.js')
+        }
+      }
+    }
+  },
+  renderer: {
+    root: '.',
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'index.html')
+        }
+      }
+    },
+    plugins: [scalaJSPlugin("app-js-electron-demo")]
+  }
+})

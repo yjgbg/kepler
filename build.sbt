@@ -37,6 +37,7 @@ lazy val libDemo:Project = lib("demo")
 lazy val jvmAppDemo = appJvm("demo").dependsOn(libDemo)
 lazy val nodeJsAppDemo = appJs("node-demo").dependsOn(libDemo)
 lazy val webAppDemo = appJs("web-demo").dependsOn(libDemo)
+lazy val electronAppDemo = appJs("electron-demo").dependsOn(libDemo)
 lazy val kepler:Project = lib("kepler",false)
   .settings(
     libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
