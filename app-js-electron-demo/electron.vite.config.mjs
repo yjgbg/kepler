@@ -19,11 +19,14 @@ function scalaJSPlugin(projectID) {
         : isDev ? "fastLinkJSOutput"
         : projectID ? `${projectID}/fullLinkJSOutput`
         : "fullLinkJSOutput";
-      // const projectTask = projectID ? `${projectID}/${task}` : task;
-      const child = spawn("sbt", ["--batch", "-no-colors", "-Dsbt.supershell=false", `print ${task}`], {
+      const args = ["--batch", "-no-colors", "-Dsbt.supershell=false", `print ${task}`];
+      const spawnOptions = {
         cwd: "../",
         stdio: ['ignore', 'pipe', 'inherit'],
-      });
+      }
+      const child = process.platform === 'win32'
+        ? spawn("sbt", args.map(x => `"${x}"`), {shell: true, ...spawnOptions})
+        : spawn("sbt", args, spawnOptions);
       let fullOutput = '';
       child.stdout.setEncoding('utf-8');
       child.stdout.on('data', data => {
