@@ -1,6 +1,7 @@
 package kepler
 
 object core:
+  def hello = "Hello"
   type Closure[A] = A ?=> Unit
   given [A](using A):Left[A,Nothing] = Left(summon)
   given [A](using A):Right[Nothing,A] = Right(summon)

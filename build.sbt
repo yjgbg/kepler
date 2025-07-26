@@ -1,22 +1,22 @@
-def proj(projectName:String) = Project(projectName,file(projectName))
+ThisBuild / semanticdbEnabled := true
+def project(name:String):Project = Project(name,file(name)).settings(
+  organization := "com.yjgbg",
+  scalaVersion := "3.7.1",
+  version := "1.0.16",
+  versionScheme := Some("early-semver"),
+  scalacOptions += "-Yexplicit-nulls",
+  Compile / unmanagedSourceDirectories := Seq(baseDirectory.value / "src"),
+  Compile / unmanagedResourceDirectories := (Compile / unmanagedSourceDirectories).value,
+  Test / unmanagedSourceDirectories := Seq(baseDirectory.value / "src-test"),
+  Test / unmanagedResourceDirectories := (Test / unmanagedSourceDirectories).value,
+  libraryDependencies += "com.outr" %%% "scribe" % "3.17.0",
+  libraryDependencies += "org.scala-lang" %%% "toolkit" % "0.7.0",
+  libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.18.1" % Test,
+)
+def lib(name:String) = project(s"lib-$name")
+  .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := projectName,
-    organization := "com.yjgbg",
-    scalaVersion := "3.7.1",
-    version := "1.0.9",
-    versionScheme := Some("early-semver"),
-    scalacOptions += "-Yexplicit-nulls",
-    target := file(s"target/projects/${projectName}"),
-    Compile / unmanagedSourceDirectories := Seq(baseDirectory.value / "src"),
-    Compile / unmanagedResourceDirectories := Seq(baseDirectory.value / "src"),
-    Test / unmanagedSourceDirectories := Seq(baseDirectory.value / "src-test"),
-    Test / unmanagedResourceDirectories := Seq(baseDirectory.value / "src-test"),
-    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.3.1",
-    libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0",
-    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.18.1" % Test,
-  )
-def lib(name:String) = proj(s"lib-$name")
-  .settings(
+    moduleName := name,
     publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/yjgbg/kepler"),
     publishMavenStyle := true,
     scmInfo := Some(ScmInfo(
@@ -28,25 +28,21 @@ def lib(name:String) = proj(s"lib-$name")
       "maven.pkg.github.com",
       "yjgbg",
       sys.env.getOrElse("GITHUB_TOKEN","")
-    )
+    ),
   )
-def appJvm(name:String) = proj(s"app-jvm-$name")
-  .settings(
-    assembly / assemblyJarName := s"${name}.jar",
-  )
-def appJs(name:String) = proj(s"app-js-$name")
-  .settings(
-  )
-def appNative(name:String) = proj(s"app-native-$name")
-  .settings(
-  )
-lazy val kepler = lib("kepler")
+def appJvm(name:String):Project = project(s"app-jvm-$name").settings(assembly / assemblyJarName := s"${name}.jar")
+def appJs(name:String):Project = project(s"app-js-$name").enablePlugins(ScalaJSPlugin)
+  .settings(scalaJSUseMainModuleInitializer := true,scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) })
+lazy val libDemo:Project = lib("demo")
+lazy val jvmAppDemo = appJvm("demo").dependsOn(libDemo)
+lazy val nodeJsAppDemo = appJs("node-demo").dependsOn(libDemo)
+lazy val webAppDemo = appJs("web-demo").dependsOn(libDemo)
+
+lazy val kepler:Project = lib("kepler")
   .settings(
     libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
     libraryDependencies += "com.jayway.jsonpath" % "json-path" % "2.9.0"
   )
-
-
   // helm upgrade --install --namespace kube-system nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
   //   --set nfs.server=192.168.31.200 \
   //   --set nfs.path=/media/nfs
