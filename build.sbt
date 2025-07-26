@@ -13,8 +13,8 @@ def project(name:String):Project = Project(name,file(name)).settings(
   libraryDependencies += "org.scala-lang" %%% "toolkit" % "0.7.0",
   libraryDependencies += "org.scalacheck" %%% "scalacheck" % "1.18.1" % Test,
 )
-def lib(name:String) = project(s"lib-$name")
-  .enablePlugins(ScalaJSPlugin)
+def lib(name:String,enableScalaJsPlugin:Boolean = true) = project(s"lib-$name")
+  .configure(it => if (enableScalaJsPlugin) it.enablePlugins(ScalaJSPlugin) else it)
   .settings(
     moduleName := name,
     publishTo := Some("GitHub Package Registry" at "https://maven.pkg.github.com/yjgbg/kepler"),
@@ -37,8 +37,7 @@ lazy val libDemo:Project = lib("demo")
 lazy val jvmAppDemo = appJvm("demo").dependsOn(libDemo)
 lazy val nodeJsAppDemo = appJs("node-demo").dependsOn(libDemo)
 lazy val webAppDemo = appJs("web-demo").dependsOn(libDemo)
-
-lazy val kepler:Project = lib("kepler")
+lazy val kepler:Project = lib("kepler",false)
   .settings(
     libraryDependencies += "org.yaml" % "snakeyaml" % "2.4",
     libraryDependencies += "com.jayway.jsonpath" % "json-path" % "2.9.0"
