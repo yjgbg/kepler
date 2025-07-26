@@ -14,20 +14,22 @@ enum Platform:
     case JVM => System.currentTimeMillis().toString
     case _ => new scala.scalajs.js.Date().getTime().toString
 object Platform:
-  private def test(platforms: (Platform, () => Unit)*):Option[Platform] = platforms.find{(p,closure) =>
+  private def test(platforms: (Platform, () => Any)*):Option[Platform] = platforms.find{(p,closure) =>
     try 
-      closure()
-      true
+      closure() match
+        case false => false
+        case _ => true
     catch
       case _: Throwable => false
   }.map((k,_) => k)
   lazy val current: Platform = 
     test(
-      NODEJS -> (() => scala.scalajs.js.Dynamic.global.process.asInstanceOf[scala.scalajs.js.Dynamic]),
-      RNWindows -> (() => scala.scalajs.js.Dynamic.global.Windows),
-      RNMacOS -> (() => scala.scalajs.js.Dynamic.global.MacOS),
+      NODEJS -> (() => scala.scalajs.js.Dynamic.global.process),
       RNAndroid -> (() => scala.scalajs.js.Dynamic.global.Android),
       RNiOS -> (() => scala.scalajs.js.Dynamic.global.iOS),
-      RNWeb -> (() => scala.scalajs.js.Dynamic.global.window.asInstanceOf[scala.scalajs.js.Dynamic]),
-      RNElectron -> (() => scala.scalajs.js.Dynamic.global.Electron)
-    ).getOrElse(JVM) // Default to JVM if no platform matches
+      RNMacOS -> (() => scala.scalajs.js.Dynamic.global.electron.process.platform.asInstanceOf[String] == "darwin"),
+      RNWindows -> (() => scala.scalajs.js.Dynamic.global.electron.process.platform.asInstanceOf[String] == "win32"),
+      RNElectron -> (() => scala.scalajs.js.Dynamic.global.electron), // electron 必须在web前面，因为electron环境是加强的web环境
+      RNWeb -> (() => scala.scalajs.js.Dynamic.global.window),
+      JVM -> (() => true) // Default to JVM if no platform matches
+    ).get
